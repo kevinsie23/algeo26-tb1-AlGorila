@@ -4,7 +4,14 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import java.math.RoundingMode;
-
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 public class IOHandler {
 
     public static double parseNumber(String token) {
@@ -76,5 +83,87 @@ public class IOHandler {
             return "0";
         }
         return formatted;
+    }
+
+    public static Matrix readMatrixFile(String path, int maxRows, int maxCols) throws IOException {
+        List<double[]> rowList = new ArrayList<>();
+        int expectedCols = -1;
+        boolean hasData = false;
+        
+        FileInputStream fis;
+        try {
+            fis = new FileInputStream(path);
+        } catch (FileNotFoundException e) {
+            throw new FileNotFoundException("File tidak ditemukan atau tidak dapat dibuka: " + path);
+        }
+        
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))) {
+            String line;
+            int lineNumber = 0;
+            boolean firstLine = true;
+            boolean seenEmptyLine = false;
+            
+            while ((line = br.readLine()) != null) {
+                lineNumber++;
+                if (firstLine) {
+                    if (line.startsWith("\uFEFF")) {
+                        line = line.substring(1);
+                    }
+                    firstLine = false;
+                }
+                
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) {
+                    seenEmptyLine = true;
+                    continue;
+                }
+                
+                if (seenEmptyLine) {
+                    throw new IllegalArgumentException("Ditemukan baris kosong sebelum baris " + lineNumber + " yang berisi data.");
+                }
+                
+                String[] tokens = trimmed.split("\\s+");
+                int currentCols = tokens.length;
+                
+                if (expectedCols == -1) {
+                    expectedCols = currentCols;
+                } else if (currentCols != expectedCols) {
+                    throw new IllegalArgumentException("Jumlah kolom tidak konsisten pada baris " + lineNumber + ". Diharapkan " + expectedCols + ", tetapi ditemukan " + currentCols);
+                }
+                
+                if (rowList.size() >= maxRows) {
+                    throw new IllegalArgumentException("Jumlah baris melebihi batas maksimal (" + maxRows + ") pada baris " + lineNumber);
+                }
+                if (expectedCols > maxCols) {
+                    throw new IllegalArgumentException("Jumlah kolom melebihi batas maksimal (" + maxCols + ")");
+                }
+                
+                double[] rowData = new double[currentCols];
+                for (int i = 0; i < currentCols; i++) {
+                    try {
+                        rowData[i] = parseNumber(tokens[i]);
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Kesalahan pada baris " + lineNumber + ", kolom " + (i + 1) + ": " + e.getMessage(), e);
+                    }
+                }
+                rowList.add(rowData);
+                hasData = true;
+            }
+            
+            if (!hasData) {
+                throw new IllegalArgumentException("File kosong atau tidak memiliki data matriks yang valid.");
+            }
+            
+            int numRows = rowList.size();
+            Matrix matrix = new Matrix(numRows, expectedCols);
+            for (int i = 0; i < numRows; i++) {
+                double[] row = rowList.get(i);
+                for (int j = 0; j < expectedCols; j++) {
+                    matrix.setElmt(i, j, row[j]);
+                }
+            }
+            
+            return matrix;
+        }
     }
 }
