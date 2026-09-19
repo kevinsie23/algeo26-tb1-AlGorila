@@ -50,7 +50,7 @@ public class Matrix {
 
     public void add(Matrix other){
         if(this.rows != other.rows || this.cols != other.cols)
-            return;
+            throw new IllegalArgumentException("Ukuran kedua matriks harus sama!");
 
         for(int i = 0; i < this.rows; i++)
             for(int j = 0; j < this.cols; j++)
@@ -59,7 +59,8 @@ public class Matrix {
 
     public void subtract(Matrix other){
         if(this.rows != other.rows || this.cols != other.cols)
-            return;
+            throw new IllegalArgumentException("Ukuran kedua matriks harus sama!");
+
 
         for(int i = 0; i < this.rows; i++)
             for(int j = 0; j < this.cols; j++)
@@ -68,7 +69,8 @@ public class Matrix {
 
     public Matrix multiply(Matrix other){
         if(this.cols != other.rows)
-                return this;
+            throw new IllegalArgumentException("Ukuran kedua matriks harus sama!");
+
 
         Matrix result = new Matrix(this.rows, other.cols);
 
@@ -94,6 +96,12 @@ public class Matrix {
     }
 
     public Matrix getCofactor(int iCof, int jCof){
+        if(this.rows != this.cols)
+            return null;
+
+        if(this.rows == 1)
+            return this;
+
         Matrix cofactor = new Matrix(this.rows-1, this.cols-1);
         int newI = 0, newJ = 0;
         for(int i = 0; i < this.rows; i++){
@@ -116,7 +124,7 @@ public class Matrix {
 
     public Matrix augment(Matrix other){
         if(this.rows != other.rows)
-            return this;
+            throw new IllegalArgumentException("Jumlah baris kedua matriks harus sama!");
 
         int newCols = this.cols + other.cols;
         Matrix augmented = new Matrix(this.rows, newCols);
@@ -141,5 +149,13 @@ public class Matrix {
                 copyMatrix.data[i][j] = this.data[i][j];
         
         return copyMatrix;
+    }
+
+    public static Matrix createIdentityMatrix(int n){
+        Matrix identity = new Matrix(n, n);
+        for(int i = 0; i < n; i++)
+                identity.setElmt(i, i, 1);
+
+        return identity;
     }
 }
