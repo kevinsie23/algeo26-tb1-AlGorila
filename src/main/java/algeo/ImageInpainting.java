@@ -4,7 +4,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.Buffer;
-
 import javax.imageio.ImageIO;
 
 public class ImageInpainting {
@@ -44,7 +43,7 @@ public class ImageInpainting {
         boolean[][] isHole = new boolean[height][width];
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
-                int gray = grayscaleOf(mask.getRGB(i, j));
+                int gray = grayScale(mask.getRGB(i, j));
                 if(gray > MASK_THRESHOLD)
                     isHole[j][i] = true;
                 else
@@ -153,7 +152,7 @@ public class ImageInpainting {
         return new Result(Math.min(iter, MAX_ITER), maxDelta);
     }
  
-    static int grayscaleOf(int rgb) {
+    static int grayScale(int rgb) {
         int r = (rgb >> 16) & 0xFF;
         int g = (rgb >> 8) & 0xFF;
         int b = rgb & 0xFF;
