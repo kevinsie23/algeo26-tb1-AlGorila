@@ -191,6 +191,7 @@ public class IOHandler {
         Matrix matrix = new Matrix(rows, cols);
         for(int i=0; i<rows; i++){
             while(true){
+                System.out.print("Masukkan baris " +(i+1)+ ": ");
                 if(!sc.hasNextLine()){
                     throw new IllegalStateException("Input berakhir mendadak pada baris ke-" +(i+1));
                 }
