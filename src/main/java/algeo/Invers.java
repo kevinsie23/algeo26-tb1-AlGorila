@@ -9,7 +9,7 @@ public class Invers {
         Matrix iMatrix = Matrix.createIdentityMatrix(size);
         Matrix augmented = m.augment(iMatrix);
 
-        //Fungsi OBE Gauss Jordan
+        augmented = SPL.rref(augmented, size, null);
 
         Matrix invers = new Matrix(size, size);
         for(int i = 0; i < size; i++)

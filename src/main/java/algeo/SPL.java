@@ -31,6 +31,7 @@ public class SPL {
                 temp.swapRows(r, pivotRow);
                 if(stepsOrNull != null){
                     stepsOrNull.add("R" + (r+1) + " <-> R" + (pivotRow+1));
+                    stepsOrNull.add(matriksKeString(temp));
                 }
             }
             
@@ -39,6 +40,7 @@ public class SPL {
                 temp.multiplyRow(r, 1.0 / pivotVal);
                 if(stepsOrNull != null){
                     stepsOrNull.add("R" + (r+1) + " <- R" + (r+1) + " / " + IOHandler.formatNumber(pivotVal));
+                    stepsOrNull.add(matriksKeString(temp));
                 }
             }
             
@@ -50,6 +52,7 @@ public class SPL {
                     if(stepsOrNull != null){
                         String sign = factor > 0 ? " - " : " + ";
                         stepsOrNull.add("R" + (i+1) + " <- R" + (i+1) + sign + IOHandler.formatNumber(Math.abs(factor)) + "*R" + (r+1));
+                        stepsOrNull.add(matriksKeString(temp));
                     }
                 }
             }
@@ -106,6 +109,7 @@ public class SPL {
                 temp.swapRows(r, pivotRow);
                 if(recordSteps){
                     res.langkah.add("R" + (r+1) + " <-> R" + (pivotRow+1));
+                    res.langkah.add(matriksKeString(temp));
                 }
             }
             
@@ -114,6 +118,7 @@ public class SPL {
                 temp.multiplyRow(r, 1.0 / pivotVal);
                 if(recordSteps){
                     res.langkah.add("R" + (r+1) + " <- R" + (r+1) + " / " + IOHandler.formatNumber(pivotVal));
+                    res.langkah.add(matriksKeString(temp));
                 }
             }
             pivotCols[r] = c;
@@ -125,6 +130,7 @@ public class SPL {
                     if(recordSteps){
                         String sign = factor > 0 ? " - " : " + ";
                         res.langkah.add("R" + (i+1) + " <- R" + (i+1) + sign + IOHandler.formatNumber(Math.abs(factor)) + "*R" + (r+1));
+                        res.langkah.add(matriksKeString(temp));
                     }
                 }
             }
@@ -435,5 +441,18 @@ public class SPL {
         }
         
         return res;
+    }
+
+    private static String matriksKeString(Matrix m) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < m.getRows(); i++) {
+            for (int j = 0; j < m.getCols(); j++) {
+                double v = m.getElmt(i, j);
+                if (Math.abs(v) < 0.0005) v = 0;
+                sb.append(String.format(java.util.Locale.US, "%9.3f", v));
+            }
+            if (i < m.getRows() - 1) sb.append("\n");
+        }
+        return sb.toString();
     }
 }
