@@ -1,4 +1,4 @@
-package algeo;
+package algeo.modules;
 
 public class Determinan {
     public static double rowReduction(Matrix m){

@@ -1,4 +1,4 @@
-package algeo;
+package algeo.modules;
 
 public class Invers {
     public static Matrix augmentInverse(Matrix m){

@@ -1,9 +1,10 @@
-package algeo;
-import algeo.SPLResult.Jenis;
+package algeo.modules;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import algeo.modules.SPLResult.Jenis;
 
 public class SPL {
     public static Matrix rref(Matrix m, int pivotCols, List<String> stepsOrNull) {
