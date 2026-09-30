@@ -5,6 +5,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Scanner;
 
+import algeo.modules.Determinan;
+import algeo.modules.IOHandler;
+import algeo.modules.InterpolasiPolinomial;
+import algeo.modules.Invers;
+import algeo.modules.Matrix;
+import algeo.modules.RegresiSpline;
+import algeo.modules.SPL;
+import algeo.modules.SPLResult;
+import algeo.modules.SplineKubik;
+
 public class App {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);

@@ -1,4 +1,4 @@
-package algeo;
+package algeo.modules;
 
 public class Matrix {
     private double[][] data;
