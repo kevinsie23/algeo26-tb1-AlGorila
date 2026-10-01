@@ -1,5 +1,6 @@
 package algeo;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -14,6 +15,7 @@ import algeo.modules.RegresiSpline;
 import algeo.modules.SPL;
 import algeo.modules.SPLResult;
 import algeo.modules.SplineKubik;
+import algeo.modules.ImageInpainting;
 
 public class App {
     public static void main(String[] args) {
@@ -27,11 +29,12 @@ public class App {
                 System.out.println("4. Interpolasi Polinomial");
                 System.out.println("5. Natural Cubic Spline Interpolation");
                 System.out.println("6. Regresi Spline Kubik");
-                System.out.println("7. Keluar");
+                System.out.println("7. Image Inpainting");
+                System.out.println("8. Keluar");
                 
-                int pilihan = IOHandler.readInt(sc, "Pilih menu (1-7): ", 1, 7);
+                int pilihan = IOHandler.readInt(sc, "Pilih menu (1-8): ", 1, 8);
                 
-                if (pilihan == 7) {
+                if (pilihan == 8) {
                     System.out.println("Terima kasih.");
                     break;
                 }
@@ -50,6 +53,8 @@ public class App {
                     menuSpline(sc);
                 } else if (pilihan == 6) {
                     menuRegresiSpline(sc);
+                } else if (pilihan == 7) {
+                    menuImageInpainting(sc);
                 }
             } catch (Exception e) {
                 boolean hasNext = false;
@@ -67,6 +72,45 @@ public class App {
             }
         }
     }
+
+    private static void menuImageInpainting(Scanner sc) {
+        System.out.println("\n--- Image Inpainting ---");
+    
+        String fileAsli = readNamaFile(sc, "Masukkan nama file gambar asli: ");
+        if (fileAsli == null)
+            return;
+
+        String fileMask = readNamaFile(sc, "Masukkan nama file gambar mask: ");
+        if (fileMask == null)
+            return;
+
+        String fileOutput = readNamaFile(sc, "Masukkan nama file output: ");
+        if (fileOutput == null)
+            return;
+
+        if (!ImageInpainting.imageInpainting(fileAsli, fileMask, fileOutput)){
+            System.out.println("Restorasi gambar tidak berhasil.");
+        }
+    }
+
+    private static String readNamaFile(Scanner sc, String prompt){
+        System.out.print(prompt);
+        String nama = sc.nextLine().trim();
+
+        if (nama.isEmpty()) {
+            System.out.println("Nama file tidak boleh kosong!");
+            return null;
+        }
+
+        int dot = nama.lastIndexOf('.');
+        if (dot <= 0 || dot == nama.length() - 1) {
+            System.out.println("Nama file harus menyertakan format, contoh: gambar.png");
+            return null;
+        }
+
+        return nama;
+    }
+
 
     private static void menuSPL(Scanner sc) {
         System.out.println("\n--- Sistem Persamaan Linier (SPL) ---");

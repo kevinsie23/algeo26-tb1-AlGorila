@@ -9,18 +9,19 @@ public class ImageInpainting {
     static final int MAX_ITER = 20000;
     static final double DIF = 1e-3;
     static final int MAX_DIMENSION = 512;
+    static final String IMAGE_DIR = "image/";
  
-    public static void main(String[] args) {
+    public static boolean imageInpainting(String pathOriginal, String pathMask, String pathOutput) {
         try{
-                String pathOriginal = "C:/Things/Semester 3/IF2123 Aljabar Linear dan Geometri/algeo26-tb1-AlGorila/image/Ril.png";
-            String pathMask = "C:/Things/Semester 3/IF2123 Aljabar Linear dan Geometri/algeo26-tb1-AlGorila/image/Mask.png";
-            String pathOutput = "C:/Things/Semester 3/IF2123 Aljabar Linear dan Geometri/algeo26-tb1-AlGorila/image/Result.png";
+            pathOriginal = IMAGE_DIR + pathOriginal;
+            pathMask = IMAGE_DIR + pathMask;
+            pathOutput = IMAGE_DIR + pathOutput;
     
             BufferedImage original = ImageIO.read(new File(pathOriginal));
             BufferedImage mask = ImageIO.read(new File(pathMask));
 
             if(!isValidImage(original, mask))
-                return;
+                return false;
 
             int width = original.getWidth();
             int height = original.getHeight();
@@ -54,9 +55,11 @@ public class ImageInpainting {
 
             ImageIO.write(hasil, format, new File(pathOutput));
             System.out.println("Gambar hasil disimpan di: " + pathOutput);
+            return true;
+
         } catch (Exception e){
             System.out.println("Terjadi kesalahan saat memproses gambar: " + e.getMessage());
-            e.printStackTrace();
+            return false;
         }
     }
 
