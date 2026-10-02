@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import algeo.modules.Determinan;
@@ -147,24 +149,22 @@ public class App {
             else if (metode == 2) res = SPL.gaussJordan(m);
             else if (metode == 3) res = SPL.inverseMethod(m);
             else if (metode == 4) res = SPL.cramer(m);
+        } catch (OutOfMemoryError e) {
+           System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung SPL: " + e.getMessage());
             return;
         }
         
         System.out.println("\n--- Hasil SPL ---");
-        if (res.langkah != null && !res.langkah.isEmpty()) {
-            System.out.println("Langkah-langkah:");
-            for (String step : res.langkah) {
-                System.out.println(step);
-            }
-        }
+        cetakLangkah(res.langkah);
         
         String hasilDisplay = res.toDisplayString(m.getCols() - 1);
         System.out.println("\nSolusi:");
         System.out.println(hasilDisplay);
         
-        tanyaSimpan(sc, res.namaMetode, m, hasilDisplay);
+        tanyaSimpan(sc, res.namaMetode, m, res.langkah, hasilDisplay);
     }
 
     private static void menuDeterminan(Scanner sc) {
@@ -173,7 +173,8 @@ public class App {
         System.out.println("2. Metode Ekspansi Kofaktor");
         int metode = IOHandler.readInt(sc, "Pilih metode (1-2): ", 1, 2);
         
-        Matrix m = bacaMatriks(sc, false, null);
+        String namaValidasi = (metode == 2) ? "Kofaktor" : null;
+        Matrix m = bacaMatriks(sc, false, namaValidasi);
         if (m == null) return;
         
         if (m.getRows() != m.getCols()) {
@@ -181,10 +182,14 @@ public class App {
             return;
         }
         
+        List<String> langkah = new ArrayList<>();
         double det = 0;
         try {
-            if (metode == 1) det = Determinan.rowReduction(m);
-            else det = Determinan.cofactorExpansion(m);
+            if (metode == 1) det = Determinan.rowReduction(m, langkah);
+            else det = Determinan.cofactorExpansion(m, langkah);
+        } catch (OutOfMemoryError e) {
+            System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung determinan: " + e.getMessage());
             return;
@@ -192,32 +197,10 @@ public class App {
         
         String namaMetode = metode == 1 ? "Determinan (Reduksi Baris)" : "Determinan (Ekspansi Kofaktor)";
         String hasilDisplay = "Determinan = " + IOHandler.formatNumber(det);
+        cetakLangkah(langkah);
         System.out.println("\n" + hasilDisplay);
         
-        tanyaSimpan(sc, namaMetode, m, hasilDisplay);
-    }
-
-    private static Matrix hitungInversSementara(Matrix m) {
-        try {
-            double det = Determinan.rowReduction(m);
-            if (Math.abs(det) < 1e-9) {
-                return null;
-            }
-        } catch (Exception e) {
-            return null;
-        }
-        
-        int n = m.getRows();
-        Matrix augmented = m.augment(Matrix.createIdentityMatrix(n));
-        Matrix rrefResult = SPL.rref(augmented, n, null);
-        
-        Matrix inv = new Matrix(n, n);
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                inv.setElmt(i, j, rrefResult.getElmt(i, j + n));
-            }
-        }
-        return inv;
+        tanyaSimpan(sc, namaMetode, m, langkah, hasilDisplay);
     }
 
     private static void menuInvers(Scanner sc) {
@@ -235,14 +218,20 @@ public class App {
             return;
         }
         
+        List<String> langkah = new ArrayList<>();
         Matrix inv = null;
         try {
-            if (metode == 1) inv = hitungInversSementara(m);
-            else inv = Invers.adjoinInverse(m);
+            if (metode == 1) inv = Invers.augmentInverse(m, langkah);
+            else inv = Invers.adjoinInverse(m, langkah);
+        } catch (OutOfMemoryError e) {
+            System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung invers: " + e.getMessage());
             return;
         }
+
+        cetakLangkah(langkah);
         
         if (inv == null) {
             System.out.println("matriks tidak memiliki balikan");
@@ -262,7 +251,7 @@ public class App {
         
         System.out.println("\nSolusi Invers:\n" + hasilDisplay);
         
-        tanyaSimpan(sc, namaMetode, m, hasilDisplay);
+        tanyaSimpan(sc, namaMetode, m, langkah, hasilDisplay);
     }
 
     private static Matrix bacaMatriks(Scanner sc, boolean augmented, String namaMetodeUntukValidasi) {
@@ -300,7 +289,7 @@ public class App {
         
         if (res != null && namaMetodeUntukValidasi != null) {
             String namaMetodeUpper = namaMetodeUntukValidasi.toUpperCase();
-            if (namaMetodeUpper.contains("CRAMER") || namaMetodeUpper.contains("ADJOIN")) {
+            if (namaMetodeUpper.contains("CRAMER") || namaMetodeUpper.contains("ADJOIN") || namaMetodeUpper.contains("KOFAKTOR")) {
                 int limitCols = namaMetodeUpper.contains("CRAMER") ? res.getCols() - 1 : res.getCols();
                 if (limitCols > 12) {
                     System.out.println("Metode ini menggunakan ekspansi kofaktor yang sangat lambat untuk matriks besar (>12x12). Silakan pilih metode lain atau gunakan matriks yang lebih kecil.");
@@ -311,7 +300,15 @@ public class App {
         return res;
     }
 
-    private static void tanyaSimpan(Scanner sc, String namaMetode, Matrix inputM, String hasil) {
+    private static void cetakLangkah(List<String> langkah) {
+        if(langkah == null || langkah.isEmpty())
+            return;
+        
+        System.out.println("\nLangkah-langkah:");
+        for(String s : langkah) System.out.println(s);
+    }
+
+    private static void tanyaSimpan(Scanner sc, String namaMetode, Matrix inputM, List<String> langkah, String hasil) {
         int simpan = IOHandler.readInt(sc, "Simpan ke file? (1. Ya, 2. Tidak): ", 1, 2);
         if (simpan == 1) {
             System.out.print("Masukkan nama file keluaran (misal output.txt): ");
@@ -326,6 +323,12 @@ public class App {
                     }
                     pw.println();
                 }
+
+                if(langkah != null && !langkah.isEmpty()) {
+                    pw.println("\nLangkah-langkah:");
+                    for (String s : langkah) pw.println(s);
+                }
+
                 pw.println("\nHasil:");
                 pw.println(hasil);
                 System.out.println("Berhasil disimpan ke " + path);

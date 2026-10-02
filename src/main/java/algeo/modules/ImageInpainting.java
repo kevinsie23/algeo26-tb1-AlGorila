@@ -29,7 +29,14 @@ public class ImageInpainting {
 
 
             boolean[][] isHole = getMaskHole(mask, width, height);
-            
+            int n = 0;
+            for(int j = 0; j < height; j++)
+                for(int i = 0; i < width; i++)
+                    if(isHole[j][i])
+                        n++;
+            System.out.println("Dimensi SPL         :" + n + " x " + n);
+
+
             Matrix R = new Matrix(height, width);
             Matrix G = new Matrix(height, width);
             Matrix B = new Matrix(height, width);
