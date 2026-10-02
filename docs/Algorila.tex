@@ -1,0 +1,709 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel} 
+\usepackage{microtype} 
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Kelompok AlGorila}
+\fancyhead[R]{IF2123 Aljabar Linier dan Geometri}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+    
+    {\Large \bfseries Laporan Tugas Besar 1 IF2123 Aljabar Linier dan Geometri\par}
+    \vspace{0.5cm}
+    {\Large \bfseries Sistem Persamaan Linier, Determinan, Invers Matriks, dan Pemodelan Kurva\par}
+    
+    \vfill
+    
+    \includegraphics[width=0.6\textwidth]{fotokelompok.png}\par
+    
+    \vfill
+    
+    {\large \bfseries Disusun Oleh:\par}
+    \vspace{0.1cm}
+    {\large Rafel Dzinun Muhammad \quad (13525063)\par}
+    {\large Kevin Sie \quad (13525053)\par}
+    {\large Ahmad Boutros Fathir \quad (13525002)\par}
+    
+    \vfill
+      \vspace{0.1cm}
+    {\large \bfseries Program Studi Teknik Informatika\par}
+    {\large \bfseries Sekolah Teknik Elektro dan Informatika Komputasi\par}
+    {\large \bfseries Institut Teknologi Bandung\par}
+    {\large \bfseries 2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+
+\section{Pendahuluan}
+
+\subsection{Deskripsi Masalah}
+Konsep fundamental aljabar linier seperti Sistem Persamaan Linier atau SPL, determinan, hingga matriks balikan merupakan pilar penting yang selalu hadir dalam berbagai komputasi keteknikan dan pengolahan data. Penyelesaian operasi ini secara manual mungkin masih praktis untuk matriks berukuran kecil seperti dimensi $3 \times 3$, namun pendekatan tersebut menjadi lambat dan tidak efisien ketika ukuran matriks membengkak hingga puluhan atau ratusan baris. Kompleksitas serupa juga ditemukan dalam domain pemodelan data. Berbagai upaya untuk menarik kurva yang melewati sekumpulan titik observasi pada akhirnya selalu bermuara pada tahapan komputasi penyelesaian persamaan linier.
+
+\subsection{Latar Belakang}
+Berdasarkan spesifikasi tugas ini, seorang peneliti bernama Mitya membutuhkan perangkat lunak yang sanggup mengerjakan semua perhitungan matematis tersebut secara otomatis. Oleh karena itu, kelompok kami ditugaskan untuk merancang dan membangun pustaka aljabar linier sekaligus program aplikasinya menggunakan bahasa pemrograman Java murni. Kami diuji untuk mampu menerjemahkan logika matematika menjadi baris kode yang fungsional, tangguh dalam menangani masukan galat, serta tetap cepat saat menghadapi matriks berskala masif tanpa memanfaatkan pustaka bantuan luar sama sekali.
+
+\subsection{Tujuan}
+Tujuan utama pengerjaan tugas besar ini adalah mengimplementasikan algoritma penyelesaian sistem persamaan linier, pencarian determinan, matriks balikan, serta merancang fungsionalitas pemodelan kurva yang meliputi interpolasi polinomial, spline kubik, regresi spline, dan pemrosesan pemulihan citra. Seluruh fungsionalitas tersebut dibungkus ke dalam sebuah pustaka modular yang dijalankan melalui antarmuka baris perintah yang mudah digunakan.
+
+
+\section{Dasar Teori}
+
+\subsection{Sistem Persamaan Linier}
+Sistem Persamaan Linier (SPL) adalah himpunan berhingga dari persamaan-persamaan linier dengan variabel-variabel yang sama. Secara umum, sistem dengan $m$ persamaan dan $n$ variabel dapat direpresentasikan dalam bentuk persamaan aljabar matriks $Ax = b$, di mana $A$ adalah matriks koefisien berukuran $m \times n$, $x$ adalah vektor variabel kolom, dan $b$ adalah vektor konstanta hasil. Untuk mempermudah komputasi, matriks ini sering digabungkan menjadi matriks \textit{augmented} berbentuk $[A|b]$. Solusi dari sebuah SPL selalu jatuh ke dalam salah satu dari tiga kategori matematis: memiliki solusi tunggal, memiliki banyak solusi (parametrik), atau tidak memiliki solusi sama sekali (inkonsisten). Terdapat empat metode utama yang diimplementasikan untuk menyelesaikan masalah ini:
+
+\begin{itemize}
+    \item \textbf{Eliminasi Gauss:} Metode ini berfokus pada pengubahan matriks \textit{augmented} menjadi bentuk eselon baris (\textit{Row Echelon Form}) melalui serangkaian Operasi Baris Elementer (OBE). Pada bentuk ini, elemen di bawah setiap pivot bernilai nol dan setiap pivot bernilai satu. Setelah bentuk eselon baris tercapai, nilai masing-masing variabel dicari dari bawah ke atas menggunakan teknik substitusi mundur (\textit{backward substitution}).
+    \item \textbf{Eliminasi Gauss-Jordan:} Merupakan bentuk lanjutan dari eliminasi Gauss. Operasi baris elementer diteruskan hingga matriks mencapai bentuk eselon baris tereduksi (\textit{Reduced Row Echelon Form}). Pada kondisi ini, elemen di atas maupun di bawah pivot utama semuanya bernilai nol, sehingga matriks koefisien berubah menjadi matriks identitas dan solusi untuk masing-masing variabel dapat langsung dibaca secara sejajar pada kolom konstanta di ruas paling kanan.
+    \item \textbf{Partial Pivoting (Tata-ancang Parsial):} Mengingat memori komputer menyimpan bilangan real dengan presisi \textit{floating point} yang terbatas, pembagian dengan angka pivot yang sangat kecil dapat memperbesar galat pembulatan secara drastis. Oleh karena itu, pada eliminasi Gauss dan Gauss-Jordan diterapkan teknik \textit{partial pivoting}. Algoritma ini memindai setiap kolom untuk mencari nilai mutlak terbesar, lalu menukar baris tersebut ke posisi pivot teratas guna meminimalisasi galat dan mencegah terjadinya pembagian dengan nol (\textit{division by zero}).
+    \item \textbf{Metode Matriks Balikan:} Metode ini bertumpu pada sifat invers matriks dan hanya berlaku jika matriks koefisien $A$ berbentuk persegi ($n \times n$) serta bersifat non-singular ($det(A) \neq 0$). Solusi dari sistem persamaan linier $Ax = b$ dapat secara langsung dihitung dengan mengalikan matriks balikan koefisien dengan vektor konstanta hasil, yaitu $x = A^{-1}b$.
+    \item \textbf{Kaidah Cramer:} Sama seperti metode matriks balikan, kaidah Cramer mensyaratkan matriks $A$ berbentuk persegi dan determinannya tidak bernilai nol. Perhitungan solusi setiap variabel dilakukan dengan membagi determinan matriks $A_i$ dengan nilai determinan matriks awal $A$. Matriks $A_i$ dibentuk dengan mengganti seluruh elemen pada kolom ke-$i$ dari matriks $A$ dengan vektor konstanta $b$. Secara matematis dirumuskan sebagai:
+    $$x_i = \frac{det(A_i)}{det(A)}$$
+\end{itemize}
+
+\subsection{Determinan Matriks}
+Determinan adalah suatu nilai skalar unik yang hanya dapat dikomputasi dari sebuah matriks persegi berordo $n \times n$. Nilai determinan memegang peranan vital dalam aljabar linier karena menjadi indikator utama apakah suatu matriks memiliki balikan (non-singular, $det(A) \neq 0$) atau tidak (singular, $det(A) = 0$). Sifat-sifat dasar determinan meliputi determinan matriks transpos sama dengan matriks asalnya ($det(A^T) = det(A)$), serta penukaran dua baris matriks akan membalikkan tanda determinannya. Dua pendekatan utama digunakan dalam menghitung determinan:
+
+\begin{itemize}
+    \item \textbf{Metode Reduksi Baris (OBE):} Merupakan metode yang sangat efisien untuk matriks berskala masif dengan kompleksitas waktu $O(n^3)$. Matriks direduksi menggunakan operasi baris elementer hingga membentuk matriks segitiga atas. Pada bentuk ini, determinan matriks adalah hasil kali dari semua elemen pada diagonal utamanya, dikalikan dengan $(-1)^k$, di mana $k$ adalah jumlah operasi penukaran baris (\textit{row swapping}) yang terjadi selama proses reduksi.
+    \item \textbf{Metode Ekspansi Kofaktor:} Metode ini menggunakan pendekatan dekomposisi rekursif untuk memecah matriks berukuran besar menjadi sub-matriks minor yang lebih kecil. Ekspansi kofaktor sepanjang baris ke-$i$ dirumuskan sebagai:
+    $$det(A) = \sum_{j=1}^n a_{ij}C_{ij}$$
+    Nilai kofaktor $C_{ij}$ didapatkan dari persamaan $C_{ij} = (-1)^{i+j}M_{ij}$, di mana $M_{ij}$ adalah determinan minor matriks yang dihasilkan setelah menghapus baris ke-$i$ dan kolom ke-$j$. Karena kompleksitas waktunya mencapai $O(n!)$, metode ini mengoptimalkan eksekusinya dengan selalu memilih baris atau kolom yang memiliki elemen angka nol terbanyak sebagai acuan ekspansi.
+\end{itemize}
+
+\subsection{Matriks Balikan (Invers)}
+Matriks balikan, dilambangkan dengan $A^{-1}$, adalah matriks yang secara khusus memenuhi identitas perkalian $A \cdot A^{-1} = A^{-1} \cdot A = I$, di mana $I$ adalah matriks identitas seukuran matriks $A$. Matriks balikan juga memiliki sifat-sifat matematis turunan, seperti $(A^{-1})^{-1} = A$ dan $(AB)^{-1} = B^{-1}A^{-1}$. Pencarian invers dalam pustaka ini difasilitasi melalui dua algoritma:
+
+\begin{itemize}
+    \item \textbf{Metode Augmentasi (Eliminasi Gauss-Jordan):} Metode komputasi numerik ini menjejerkan matriks asal $A$ dengan matriks identitas $I$ di dalam satu bingkai matriks \textit{augmented} berbentuk $[A|I]$. Seluruh matriks tersebut kemudian direduksi menggunakan operasi baris elementer secara serentak. Jika ruas kiri matriks berhasil berubah menjadi matriks identitas murni, maka ruas kanan matriks yang semula identitas telah bertransformasi menjadi matriks balikan $A^{-1}$.
+    \item \textbf{Metode Adjoin:} Pencarian balikan dengan pendekatan analitik ini memanfaatkan matriks kofaktor. Mula-mula, matriks kofaktor $C$ disusun dari perhitungan determinan minor pada setiap elemen. Transpos dari matriks kofaktor ini disebut sebagai matriks adjoin ($Adj(A) = C^T$). Matriks balikan akhirnya didapatkan dengan mengalikan matriks adjoin tersebut dengan skalar invers dari determinan matriks asalnya:
+    $$A^{-1} = \frac{1}{det(A)}Adj(A)$$
+\end{itemize}
+
+\subsection{Interpolasi Polinomial}
+Interpolasi polinomial adalah metode untuk memodelkan fungsi yang tidak diketahui asalnya menjadi sebuah polinomial yang secara presisi melintasi sekumpulan titik data diskrit. Jika diberikan sekumpulan data yang terdiri dari $n+1$ titik sampel berbentuk $(x_0, y_0), (x_1, y_1), \dots, (x_n, y_n)$ yang masing-masing unik nilainya, maka akan dapat dikonstruksi tepat satu buah polinomial dengan derajat tertinggi $n$ yang berbentuk:
+$$P_n(x) = a_0 + a_1x + a_2x^2 + \dots + a_nx^n$$
+Pencarian parameter koefisien $a_0, a_1, \dots, a_n$ dilakukan dengan menyubstitusikan nilai titik absis dan ordinat masukan ke dalam bentuk deret pangkat berurutan, sehingga membentuk Sistem Persamaan Linier yang disebut dengan matriks Vandermonde:
+$$ \begin{bmatrix} 1 & x_0 & x_0^2 & \dots & x_0^n \\ 1 & x_1 & x_1^2 & \dots & x_1^n \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 1 & x_n & x_n^2 & \dots & x_n^n \end{bmatrix} \begin{bmatrix} a_0 \\ a_1 \\ \vdots \\ a_n \end{bmatrix} = \begin{bmatrix} y_0 \\ y_1 \\ \vdots \\ y_n \end{bmatrix} $$
+Matriks Vandermonde di atas lalu diselesaikan dengan algoritma Eliminasi Gauss untuk memperoleh koefisien polinomial pembentuk kurva interpolasinya.
+
+\subsection{Interpolasi Spline Kubik (Natural Cubic Spline)}
+Metode interpolasi polinomial berderajat tinggi cenderung memicu osilasi atau fluktuasi ekstrem di area ujung kurva (Fenomena Runge). Interpolasi spline mengatasi limitasi tersebut dengan membagi rentang domain menjadi beberapa interval antar-titik data dan menggunakan persamaan polinomial berderajat rendah (kubik) yang disambungkan potong demi potong. Fungsi kubik pada setiap sub-interval $[x_i, x_{i+1}]$ didefinisikan dengan:
+$$S_i(x) = a_i + b_i(x-x_i) + c_i(x-x_i)^2 + d_i(x-x_i)^3$$
+Untuk menjamin agar setiap sambungan kurva terasa mulus secara visual, turunan pertama dan kedua antar-fungsi segmen di titik sambungan diwajibkan harus berkesinambungan. Syarat kelancaran ini, dikombinasikan dengan definisi lebar interval $h_i = x_{i+1} - x_i$ dan nilai turunan kedua $M_i = S''(x_i)$, akan melahirkan persamaan tridiagonal raksasa:
+$$h_{i-1}M_{i-1} + 2(h_{i-1}+h_i)M_i + h_i M_{i+1} = 6 \left( \frac{y_{i+1}-y_i}{h_i} - \frac{y_i-y_{i-1}}{h_{i-1}} \right)$$
+Persamaan tridiagonal ini memuat \textit{syarat batas natural} yang memaksa nilai turunan kedua pada titik batas kurva paling ujung bernilai mutlak nol ($M_0 = M_n = 0$). Penyelesaian matriks ini kemudian membuahkan serangkaian nilai parameter untuk menghitung koefisien fungsi kubik $a_i, b_i, c_i,$ dan $d_i$ pada masing-masing segmen.
+
+\subsection{Regresi Spline Kubik}
+Berbeda dengan interpolasi murni yang memaksa kurva memotong seluruh titik, regresi dirancang untuk menelusuri tren garis tengah pada sebaran titik observasi dalam jumlah besar untuk meminimalkan anomali data (kuadrat terkecil residu). Regresi spline menggunakan basis fungsi tersegmen yang disebut dengan \textit{basis daya terpancung} (truncated power basis), disimbolkan dengan $(x - \xi_k)_+^3$, di mana $\xi_k$ merupakan posisi titik simpul peralihan (knot). Sifat terpancung menjamin kurva tetap stabil dengan nilai kubik berlaku jika $x > \xi_k$ dan bernilai $0$ apabila sebaliknya. Model utuh regresi spline ini direpresentasikan oleh fungsi:
+$$\hat{y}(x) = \beta_0 + \beta_1x + \beta_2x^2 + \beta_3x^3 + \sum_{k=1}^K \beta_{3+k}(x-\xi_k)_+^3$$
+Matriks desain $X$ akan dibentuk dari proyeksi nilai $x$ masukan ke basis-basis pemotong tersebut. Proses pencarian himpunan bobot parameter $\beta$ terbaik dilakukan dengan mentransformasikan masalah ini ke ruang Persamaan Normal:
+$$(X^T X)\beta = X^T Y$$
+Model persamaan ini secara numerik dikomputasi menggunakan perkalian matriks standar yang kemudian dieksekusi dengan teknik eliminasi matriks.
+
+
+\section{Implementasi}
+
+\subsection{Struktur Kelas}
+Program dikembangkan dengan paradigma berorientasi objek dalam bahasa Java murni. Kelas dasar \texttt{Matrix.java} bertanggung jawab penuh atas penyimpanan data dalam bentuk himpunan dimensi ganda primitif serta menyediakan fungsi operasi aritmatika dan manipulasi baris elementer. Logika penyelesaian lanjutan dipisah ke dalam modul-modul mandiri, antara lain \texttt{SPL.java} untuk menangani komputasi eliminasi dengan fitur penukaran baris parsial, \texttt{Determinan.java} dan \texttt{Invers.java} untuk komputasi matriks inti, serta \texttt{InterpolasiPolinomial.java}, \texttt{SplineKubik.java}, dan \texttt{RegresiSpline.java} untuk pembentukan matriks permodelan kurva. Operasi manipulasi warna dan penerapan algoritma lelaran iteratif untuk pemulihan foto ditangani oleh kelas \texttt{ImageInpainting.java}. Interaksi dan pemrosesan masukan data dari pengguna difasilitasi sepenuhnya oleh kelas \texttt{IOHandler.java}.
+
+\subsection{Arsitektur Pustaka}
+Seluruh modul dirancang sedemikian rupa agar logika komputasi murni terpisah dari lapisan antarmuka interaksi pengguna. Kelas \texttt{Matrix.java} berkedudukan sebagai tulang punggung struktur data yang dipanggil oleh semua modul analisis teoritis. Komputasi matriks yang spesifik seperti pencarian kofaktor akan memanggil fungsi bawaan pustaka matriks, sementara pencarian matriks bentuk eselon baris akan mendelegasikan perhitungannya pada kelas fungsi persamaan linier terkait.
+
+\subsection{Alur Program}
+Sistem antarmuka baris perintah dirancang untuk memberikan pengalaman navigasi yang intuitif. Pengguna memulai interaksi melalui menu utama yang merangkum seluruh fitur aplikasi. Saat pengguna memilih salah satu modul penyelesaian aljabar, program akan meminta pengguna memilih metode komputasi yang diinginkan beserta format masukannya, baik berupa ketikan langsung melalui papan ketik maupun pemuatan data dari berkas teks. Pustaka \texttt{IOHandler} kemudian melakukan validasi data dan memindahkannya ke dalam memori. Setelah modul berhasil melakukan perhitungan, sistem akan mencetak hasil luaran lengkap beserta jejak langkah manipulasi operasi barisnya ke layar terminal dengan tawaran untuk menyimpan riwayat tersebut ke dalam sebuah berkas teks baru.
+
+\subsection{Pemanfaatan Build Tool}
+Proyek ini dikonfigurasi menggunakan alat manajemen perangkat lunak Maven. Penggunaan Maven sangat mempermudah proses kompilasi kode dan penyatuan struktur proyek ke dalam satu distribusi paket. Dengan mengeksekusi instruksi perakitan Maven, seluruh kode sumber, konfigurasi paket, dan penanganan galat akan dikompilasi menjadi satu berkas Java Archive (.jar) yang bisa dijalankan secara mandiri pada berbagai mesin eksekusi Java.
+\section{Eksperimen}
+Bagian ini mendokumentasikan hasil eksekusi program terhadap kasus uji yang tercantum pada dokumen spesifikasi tugas besar. Setiap pengujian memuat data masukan, tangkapan layar (\textit{screenshot}) luaran dari terminal, serta analisis komprehensif terkait kecocokan solusi eksak.
+
+\subsection{Determinan Matriks}
+
+\subsubsection{Kasus Uji 5.1.1}
+\textbf{Masukan:}
+Matriks persegi berukuran 4x4.
+$$A = \begin{bmatrix} 
+0 & 2 & -1 & 3 \\ 
+4 & 1 & 2 & -2 \\ 
+-2 & 3 & 0 & 1 \\ 
+1 & -1 & 5 & 2 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah hasil komputasi menggunakan Metode Reduksi Baris:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.1.1 reduksi (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.1.1 reduksi (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.1.1 (Metode Reduksi Baris)}
+\end{figure}
+
+\textbf{Analisis:}
+Hasil keluaran program terbukti sangat akurat dengan luaran akhir determinan bernilai -259. Berdasarkan perhitungan eksak menggunakan cara manual, nilai determinan matriks tersebut memang bernilai negatif 259. Program juga sukses menangani keberadaan angka nol pada elemen baris pertama kolom pertama tanpa mengalami galat pembagian berkat implementasi algoritma penukaran baris secara otomatis.
+
+\subsubsection{Kasus Uji 5.1.2}
+\textbf{Masukan:}
+Matriks persegi berukuran 5x5.
+$$B = \begin{bmatrix} 
+2 & -1 & 3 & 0 & 4 \\ 
+1 & 2 & -2 & 5 & -1 \\ 
+3 & 0 & 1 & 2 & 0 \\ 
+0 & 4 & -1 & 3 & 2 \\ 
+5 & 0 & 4 & 2 & 4 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah hasil komputasi menggunakan Metode Ekspansi Kofaktor:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.1.2 ekspansi (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.1.2 ekspansi (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.1.2 (Metode Ekspansi Kofaktor)}
+\end{figure}
+
+\textbf{Analisis:}
+Program berhasil menguraikan matriks berdimensi lima ini ke dalam bentuk sub-matriks minor yang lebih kecil secara rekursif. Hasil hitungan akhir menunjukkan bahwa nilai determinan matriks ini adalah 0. Hasil ini akurat dan menandakan bahwa matriks tersebut bersifat singular, di mana terdapat kebergantungan linier antar baris pembentuknya.
+
+\subsubsection{Kasus Uji 5.1.3}
+\textbf{Masukan:}
+Matriks berukuran 4x4 dengan elemen pecahan yang dikonversi menjadi format desimal.
+$$C = \begin{bmatrix} 
+0.5 & 1 & 0 & 0.5 \\ 
+0.5 & 0.75 & 0.25 & 0.25 \\ 
+-0.025 & -0.025 & 0.025 & 0.025 \\ 
+0.025 & -0.075 & 0.075 & 0.075 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah hasil komputasi menggunakan Metode Ekspansi Kofaktor:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.1.3 ekspansi (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.1.3 ekspansi (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.1.3 (Matriks Pecahan)}
+\end{figure}
+
+\textbf{Analisis:}
+Komputasi matriks dengan elemen desimal ini dieksekusi dengan baik oleh program, menghasilkan nilai determinan akhir sebesar 0.01. Hasil ini terbukti sangat presisi dan ekuivalen dengan komputasi penyelesaian matriks identik menggunakan kakas standar. Hal ini membuktikan bahwa program mampu menangani komputasi bilangan bertipe \textit{floating-point} secara rekursif tanpa kehilangan akurasi yang signifikan akibat galat pembulatan.
+
+\subsection{Matriks Balikan (Invers)}
+
+\subsubsection{Kasus Uji 5.2.1}
+\textbf{Masukan:}
+Matriks persegi berukuran 4x4 yang bersifat simetris.
+$$C = \begin{bmatrix} 
+0 & 1 & 2 & -1 \\ 
+1 & 0 & 1 & 2 \\ 
+2 & 1 & 0 & 1 \\ 
+-1 & 2 & 1 & 0 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah langkah-langkah dan hasil pencarian invers menggunakan \textbf{Metode Augmentasi}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.2.1 augment (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.2.1 augment (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.2.1 augment (3).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.2.1 augment (4).png"}
+    \caption{Langkah-langkah Eksekusi Kasus Uji 5.2.1 (Metode Augmentasi)}
+\end{figure}
+
+Berikut adalah langkah-langkah dan hasil pencarian invers menggunakan \textbf{Metode Adjoin}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.2.1 adjoin (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.2.1 adjoin (2).png"}
+    \caption{Langkah-langkah Eksekusi Kasus Uji 5.2.1 (Metode Adjoin)}
+\end{figure}
+
+\textbf{Analisis:}
+Keluaran program dari kedua metode terbukti benar, konsisten, dan presisi. Apabila kita mengalikan matriks asal dengan matriks solusi invers tersebut, hasilnya akan kembali menjadi matriks identitas. Selain itu program secara konsisten mempertahankan sifat simetris dari matriks asal, di mana matriks invers yang dihasilkan juga berbentuk simetris atau nilai elemen baris dan kolomnya saling berkebalikan secara cermin.
+
+\subsubsection{Kasus Uji 5.2.2}
+\textbf{Masukan:}
+Matriks persegi berukuran 5x5.
+$$D = \begin{bmatrix} 
+1 & 2 & 0 & -1 & 3 \\ 
+2 & -1 & 4 & 0 & 1 \\ 
+0 & 3 & 1 & 2 & -2 \\ 
+4 & 0 & 5 & 1 & 2 \\ 
+3 & 1 & 4 & -1 & 4 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah hasil penanganan matriks yang teridentifikasi singular menggunakan Metode Augmentasi dan Adjoin:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.2.2 augment (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.2.2 adjoin (1).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.2.2 (Penanganan Matriks Singular)}
+\end{figure}
+
+\textbf{Analisis:}
+Penolakan yang dilakukan program sudah sangat tepat. Matriks ini terbukti merupakan matriks singular yang memiliki determinan bernilai nol mutlak akibat adanya kebergantungan linier antar baris penyusunnya. Algoritma program di dalam Metode Augmentasi sukses mendeteksi kegagalan pembentukan pivot utama pada salah satu kolomnya, sementara Metode Adjoin mendeteksinya dari kalkulasi awal determinan. Keduanya langsung menghentikan paksa proses pencarian invers dan memberikan peringatan luaran yang informatif.
+
+\subsection{Sistem Persamaan Linier}
+
+\subsubsection{Kasus Uji 5.3.1}
+\textbf{Masukan:}
+Matriks persegi koefisien berukuran 4x4 beserta vektor konstanta berukuran 4x1.
+$$A = \begin{bmatrix} 
+0 & 2 & -1 & 1 \\ 
+1 & -1 & 2 & 3 \\ 
+2 & 1 & 1 & -1 \\ 
+-1 & 3 & 0 & 2 
+\end{bmatrix}, \quad
+b = \begin{bmatrix} 
+-5 \\ 15 \\ 1 \\ -3 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah penyelesaian matriks koefisien 4x4 menggunakan Metode Matriks Balikan (Invers):
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.3.1 Inverse (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.3.1 Inverse (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.3.1 Inverse (4).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.3.1 Inverse (5).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.3.1 (Metode Matriks Balikan)}
+\end{figure}
+
+\textbf{Analisis:}
+Hasil komputasi program sangat akurat dan sesuai dengan hitungan manual matematis. Pada kasus ini, elemen baris pertama dan kolom pertama bernilai nol yang secara alamiah akan menyebabkan galat pembagian dengan nol (\textit{division by zero}) pada algoritma naif. Namun berkat implementasi penukaran baris parsial (\textit{partial pivoting}), program secara otomatis menukar baris pertama dengan baris ketiga yang memiliki nilai mutlak terbesar, sehingga komputasi berjalan lancar hingga akhir tanpa galat.
+
+\subsubsection{Kasus Uji 5.3.2}
+\textbf{Masukan:}
+Matriks koefisien berukuran 3x5 beserta vektor konstanta berukuran 3x1.
+$$A = \begin{bmatrix} 
+1 & 2 & -1 & 0 & 3 \\ 
+2 & 4 & 1 & -1 & 5 \\ 
+-1 & -2 & 2 & 3 & -1 
+\end{bmatrix}, \quad
+b = \begin{bmatrix} 
+2 \\ 10 \\ -1 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah pendeteksian multi solusi dari matriks koefisien berukuran 3x5 menggunakan Metode Eliminasi Gauss:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.3.2 Gauss (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.3.2 Gauss (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.3.2 (Solusi Parametrik)}
+\end{figure}
+
+\textbf{Analisis:}
+Sistem persamaan ini memiliki jumlah variabel yang lebih banyak daripada jumlah persamaannya, sehingga secara logis tidak mungkin memiliki solusi tunggal. Program secara cerdas mampu mengidentifikasi kolom tanpa pivot pembuka pada bentuk eselon baris, lalu memetakannya menjadi variabel bebas $s$ dan $t$. Apabila kita menyulihkan kembali formulasi parametrik tersebut ke dalam persamaan asal, seluruh nilainya terbukti konsisten.
+
+\subsubsection{Kasus Uji 5.3.3}
+\textbf{Masukan:}
+Matriks koefisien berukuran 4x4 beserta vektor konstanta berukuran 4x1.
+$$A = \begin{bmatrix} 
+1 & -2 & 3 & 1 \\ 
+2 & 1 & -1 & 4 \\ 
+0 & 3 & 2 & -2 \\ 
+3 & -1 & 2 & 5 
+\end{bmatrix}, \quad
+b = \begin{bmatrix} 
+4 \\ -1 \\ 3 \\ 4 
+\end{bmatrix}$$
+
+\textbf{Keluaran:}
+Berikut adalah hasil uji sistem persamaan tak konsisten menggunakan Metode Eliminasi Gauss-Jordan:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.3.3 gauss-jordan (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.3.3 gauss-jordan (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.3.3 gauss-jordan (3).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.3.3 (Sistem Tak Konsisten)}
+\end{figure}
+
+\textbf{Analisis:}
+Penolakan yang dilakukan oleh program sudah sangat tepat. Apabila diamati secara teliti, baris keempat pada matriks koefisien tersebut merupakan hasil penjumlahan langsung dari baris pertama dan baris kedua. Kebergantungan linier ini menyebabkan sistem ini terbukti tidak konsisten dan program secara tepat mengidentifikasi baris kontradiksi sehingga titik potong solusi dinyatakan tidak ada.
+
+\subsubsection{Kasus Uji 5.3.4}
+\textbf{Masukan:}
+Matriks diskrit Laplacian satu dimensi berukuran 6x6 dan 10x10.
+
+\textbf{Keluaran:}
+Berikut adalah solusi untuk matriks diskrit Laplacian menggunakan Kaidah Cramer:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.3.4 cramer (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.3.4 cramer (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.3.4 cramer (3).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.3.4 (Matriks Laplacian Diskrit)}
+\end{figure}
+
+\textbf{Analisis:}
+Solusi eksak sistem ini mengikuti rumusan matematis $x_i = \frac{i(n+1-i)}{2}$ yang merupakan bentuk diskrit dari fungsi parabola. Hasil komputasi program terbukti sama persis dengan rumusan tersebut. Matriks Laplacian memiliki sifat dominan diagonal, sehingga komputasi berjalan sangat stabil tanpa menimbulkan galat pembulatan yang terlihat.
+
+
+\subsection{SPL Berbentuk Matriks Augmented}
+
+\subsubsection{Kasus Uji 5.4.1}
+\textbf{Masukan:}
+Sistem persamaan linier berformat matriks augmented 4x5.
+$$ [A|b] = \begin{bmatrix} 
+0 & 1 & -1 & 2 & -1 \\ 
+2 & 0 & 1 & -1 & 3 \\ 
+-1 & 2 & 0 & 1 & -3 \\ 
+1 & -1 & 2 & 0 & 9 
+\end{bmatrix} $$
+
+\textbf{Keluaran:}
+Berikut adalah hasil pencarian solusi menggunakan keempat metode yang diimplementasikan pada program:
+
+\textbf{1. Metode Eliminasi Gauss}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Gauss (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Gauss (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Gauss (3).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Gauss (4).png"}
+    \caption{Langkah-langkah Eksekusi Kasus Uji 5.4.1 (Metode Gauss)}
+\end{figure}
+
+\textbf{2. Metode Eliminasi Gauss-Jordan}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (3).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (4).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (5).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.1 Augmentasi (6).png"}
+    \caption{Langkah-langkah Eksekusi Kasus Uji 5.4.1 (Metode Gauss-Jordan)}
+\end{figure}
+
+\textbf{Analisis Kasus 5.4.1:}
+Kasus ini menguji ketahanan modul perhitungan sistem persamaan linier terhadap bentuk matriks \textit{augmented} langsung. Matriks dengan dimensi $4 \times 5$ ini memiliki nilai koefisien yang saling menyilang. Hasil luaran program untuk seluruh metode (termasuk Invers dan Cramer) terbukti menghasilkan titik potong solusi tunggal yang persis sama, yakni $x_1 = 1, x_2 = -2, x_3 = 3$, dan $x_4 = 2$. Substitusi nilai variabel kembali ke dalam persamaan asal membuktikan bahwa hasil komputasi rentetan OBE oleh program telah sepenuhnya valid tanpa galat logika.
+
+\subsubsection{Kasus Uji 5.4.2}
+\textbf{Masukan:}
+Sistem persamaan linier berformat matriks augmented 4x7.
+$$ [A|b] = \begin{bmatrix} 
+1 & 0 & 2 & -1 & 0 & 3 & -7 \\ 
+0 & 1 & -1 & 2 & 1 & 0 & 6 \\ 
+2 & -1 & 0 & 1 & 3 & -2 & 13 \\ 
+1 & 1 & 1 & 1 & 1 & 1 & 3 
+\end{bmatrix} $$
+
+\textbf{Keluaran:}
+Berikut adalah luaran matriks augmented 4x7 yang menghasilkan solusi parametrik menggunakan \textbf{Metode Eliminasi Gauss-Jordan}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.4.2 Gauss-Jordan (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.2 Gauss-Jordan (2).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.4.2 Gauss-Jordan (3).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.4.2 Gauss-Jordan (4).png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.4.2 Gauss-Jordan (5).png"}
+    \caption{Langkah-langkah Eksekusi Kasus Uji 5.4.2 (Augmented Parametrik)}
+\end{figure}
+
+Berikut adalah respon penolakan komputasi untuk dimensi matriks yang tidak didukung oleh \textbf{Kaidah Cramer}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{"5.4.2 Cramer (1).png"}
+    \caption{Penolakan Kasus Uji 5.4.2 oleh Metode Kaidah Cramer}
+\end{figure}
+
+\textbf{Analisis Kasus 5.4.2:}
+Sistem dengan empat persamaan dan enam variabel linier ini secara matematis dipastikan tidak akan memiliki solusi titik tunggal karena jumlah variabel yang tidak diketahui jauh melampaui jumlah batas persamaannya. Pada metode komputasi analitik murni seperti Kaidah Cramer, program memunculkan peringatan penolakan otomatis karena matriks koefisien tidak berwujud persegi. Sebaliknya, metode eliminasi Gauss-Jordan sukses menyisakan variabel bebas yang kemudian secara algoritmik dipetakan oleh program menjadi parameter asimtotik $s$ dan $t$. Menariknya, variabel $x_6$ tetap terkunci pada nilai tunggal negatif 2 ($x_6 = -2$) terlepas dari berapapun nilai masukan parameter lainnya. Modul substitusi mundur parametrik program sukses memfasilitasi kondisi unik ini tanpa mengalami kebingungan pemetaan variabel.
+
+
+\subsection{SPL Berbentuk Umum}
+
+\subsubsection{Kasus Uji 5.5.1}
+\textbf{Masukan:}
+Empat persamaan linier dengan empat variabel yang disederhanakan menjadi matriks koefisien augmented 4x5.
+$$ [A|b] = \begin{bmatrix} 
+3 & 2 & -1 & 4 & 5 \\ 
+1 & -3 & 2 & 1 & -2 \\ 
+4 & 1 & 5 & -2 & 7 \\ 
+2 & -1 & 3 & 1 & 3 
+\end{bmatrix} $$
+
+\textbf{Keluaran:}
+Berikut adalah penyelesaian persamaan linier yang disederhanakan menggunakan \textbf{Kaidah Cramer}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.5.1 Cramer (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.5.1 Cramer (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.5.1 (SPL Umum menggunakan Kaidah Cramer)}
+\end{figure}
+
+\textbf{Analisis:}
+Kehadiran nilai determinan utama bernilai negatif 88 ($det(A) = -88$) sebagai angka pembagi pada komputasi menghasilkan nilai variabel berupa deret pecahan desimal yang panjang. Program secara otomatis memotong dan membulatkannya menjadi tiga angka di belakang koma (misalnya $x_1 = -0.114$) untuk menjaga kerapian antarmuka pengguna tanpa merusak keutuhan nilai numerik kalkulasi di latar belakang.
+
+\subsubsection{Kasus Uji 5.5.2}
+\textbf{Masukan:}
+Sembilan persamaan saling silang dengan sembilan variabel pembentuk.
+
+\textbf{Keluaran:}
+Berikut adalah hasil eksekusi sembilan persamaan saling silang menggunakan \textbf{Metode Eliminasi Gauss-Jordan}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.5.2 Gauss-Jordan (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.5.2 Gauss-Jordan (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.5.2 (SPL Umum Multi-Solusi Parametrik)}
+\end{figure}
+
+\textbf{Analisis:}
+Walaupun jumlah persamaan dan jumlah variabel terlihat seimbang (sembilan persamaan), gabungan relasi antar baris pembentuk matriks ini memiliki total ruas kanan yang bergantung linier secara ekuivalen. Kebergantungan linier ini menyebabkan matriks kehilangan status \textit{full rank}, sehingga determinannya menjadi nol dan persamaan tidak memiliki titik potong variabel tunggal mutlak. Program mendeteksi redundansi tersebut lalu secara cerdas memprosesnya menggunakan pemetaan parametrik, menjadikan $x_9$ sebagai parameter asimtotik lepas $s$. Semua nilai sisa variabel lain dipetakan dan dijawab ke dalam rentang ekuivalensi terhadap nilai bebas parameter $s$ tersebut.
+\subsection{Aplikasi Sistem Persamaan Linier}
+
+\subsubsection{Kasus Uji 5.6}
+\textbf{Masukan:}
+Diberikan dataset kecil yang berisi informasi luas rumah ($X$) dan harga rumah ($Y$):
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{X (luas rumah)} & \textbf{Y (harga)} \\ \hline
+1 & 3 \\ \hline
+2 & 5 \\ \hline
+3 & 6 \\ \hline
+\end{tabular}
+\end{center}
+Model prediksi linier dibentuk dalam bentuk $y = \theta_0 + \theta_1 x$. Berdasarkan persamaan normal regresi $\theta = (X^T X)^{-1} X^T Y$, terbentuk sistem persamaan linier dengan matriks koefisien dan konstanta:
+$$ \begin{bmatrix} 3 & 6 \\ 6 & 14 \end{bmatrix} \begin{bmatrix} \theta_0 \\ \theta_1 \end{bmatrix} = \begin{bmatrix} 14 \\ 31 \end{bmatrix} $$
+
+\textbf{Keluaran:}
+Berikut adalah luaran penyelesaian parameter $\theta_0$ dan $\theta_1$ menggunakan berbagai metode pada program:
+
+\textbf{1. Metode Eliminasi Gauss dan Gauss-Jordan}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.6. gauss.png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.6. gauss-jordan.png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.6 (Eliminasi Gauss dan Gauss-Jordan)}
+\end{figure}
+
+\textbf{2. Metode Matriks Balikan (Invers) dan Kaidah Cramer}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.6. inverse (1).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.6. cramer.png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.6. inverse (2).png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.6 (Matriks Balikan dan Kaidah Cramer)}
+\end{figure}
+
+\textbf{Analisis:}
+Hasil komputasi dari keempat metode menunjukkan konsistensi penuh dalam menentukan parameter model, di mana nilai $\theta_0 = 1.667$ dan $\theta_1 = 1.5$. Hal ini membuktikan bahwa perumusan model prediksi harga rumah terhadap luas bangunan melalui persamaan normal regresi dapat diselesaikan secara presisi menggunakan berbagai algoritma sistem persamaan linier.
+
+\subsection{Interpolasi Polinomial}
+
+\subsubsection{Kasus Uji 5.7 Studi Kasus 1}
+Berikut adalah hasil penaksiran interpolasi dari tujuh pasang titik data turunan fungsi logaritmik:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"interpolasi 0.3.png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"interpolasi 0.55.png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"interpolasi 0.95.png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"interpolasi 1.38.png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.7 - Studi Kasus 1 (Interpolasi Logaritmik)}
+\end{figure}
+
+\textbf{Analisis:}
+Fungsi polinomial yang terbentuk sangat akurat dalam memodelkan titik data masukan. Nilai koefisien konstanta bernilai nol mutlak yang sangat masuk akal mengingat data masukan tersebut berawal dari absis $0.2$. Hasil evaluasi pada berbagai titik uji juga tercatat sangat presisi dan ekuivalen dengan perhitungan fungsi logaritma aslinya, di mana deviasi yang muncul murni bersumber dari pembulatan data masukan awal, bukan dari kelemahan metode.
+
+\subsubsection{Kasus Uji 5.7 Studi Kasus 2}
+Berikut adalah hasil interpolasi eksponensial suhu pemanas terhadap waktu:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"5.7.2 interpolasi 1.png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.7.2 interpolasi 3.5.png"}
+    
+    \vspace{0.2cm}
+    \includegraphics[width=0.48\textwidth]{"5.7.2 interpolasi 7.png"}\hfill
+    \includegraphics[width=0.48\textwidth]{"5.7.2 interpolasi 9.2.png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.7 - Studi Kasus 2 (Interpolasi Suhu)}
+\end{figure}
+
+\textbf{Analisis:}
+Sistem berhasil merumuskan polinomial yang menangkap tren kenaikan suhu eksponensial komponen. Berdasarkan hasil penaksiran, dapat dianalisis bahwa pada menit ke-9.2, suhu telah menembus angka $65.425^{\circ}\text{C}$. Dengan melakukan pencarian akar fungsi untuk batas kerusakan $65^{\circ}\text{C}$, dapat disimpulkan bahwa komponen mengalami kerusakan persis pada kisaran menit ke-9.134. Pada saat pengujian berlangsung, program kami juga sukses mendemonstrasikan fitur penanganan galat interaktif di mana aplikasi seketika menolak masukan baris kosong dengan pesan peringatan "Baris 3 kosong. Diharapkan 2 angka" tanpa mengalami penghentian paksa. Ini membuktikan bahwa arsitektur pembacaan data aplikasi berjalan sangat solid.
+
+
+\subsection{Natural Cubic Spline}
+
+\subsubsection{Kasus Uji 5.8}
+Berikut adalah pemecahan spline dari lima titik ordinat linier berurutan:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{"natural cubic spline.png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.8 (Natural Cubic Spline Linear)}
+\end{figure}
+
+\textbf{Analisis:}
+Karena titik-titik sampel tersebut terletak persis pada satu garis lurus matematis $y = x + 1$, setiap segmen kubik secara algoritmik menyusut menjadi persamaan garis linear biasa. Perilaku ini sangat ideal dan sesuai dengan sifat natural spline yang mendistribusikan kelengkungan secara rasional tanpa menciptakan osilasi palsu.
+
+
+\subsection{Regresi Spline}
+
+\subsubsection{Kasus Uji 5.9}
+Berikut adalah proses regresi tujuh titik observasi menggunakan metode Basis Daya Terpancung:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.55\textwidth]{"5.9 Regresi Spline Kubik.png"}
+    \caption{Hasil Eksekusi Kasus Uji 5.9 (Regresi Spline Kubik dengan Knot)}
+\end{figure}
+
+\textbf{Analisis:}
+Komputasi matriks desain menggunakan fungsi basis berhasil merangkai parameter bobot terbaik yang secara mulus menyambungkan kedua kurva observasi pada titik simpul peralihan nol. Persamaan regresi mulus yang terbentuk pada sistem adalah $y = 2 + 3x - x^3 + 2(x)_+^3$. Hasil prediksi angka $9.875$ pada area setelah knot terbukti sangat akurat dalam menelusuri lintasan tren sebaran data masukan tanpa mengalami kelebihan kelengkungan (overfitting).
+
+
+\subsection{Pemulihan Citra Digital (Image Inpainting - Bonus)}
+
+Sebagai bagian dari implementasi fitur bonus, kami melakukan eksperimen pemulihan citra (\textit{Image Inpainting}) pada gambar resolusi $500 \times 500$ piksel yang dicoret dengan tulisan "Test" tebal berwarna merah.
+
+\textbf{Masukan:}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{scene.png}\hfill
+    \includegraphics[width=0.48\textwidth]{sceneMask.png}
+    \caption{Kiri: Citra asli yang rusak (\texttt{scene.png}). Kanan: Masker area kerusakan (\texttt{sceneMask.png}).}
+\end{figure}
+
+\textbf{Keluaran:}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\textwidth]{"Image Inpainting (Scene).png"}\hfill
+    \includegraphics[width=0.48\textwidth]{sceneResult.png}
+    \caption{Kiri: Log eksekusi terminal. Kanan: Hasil akhir restorasi citra.}
+\end{figure}
+
+\textbf{Analisis:}
+Berdasarkan log terminal, sistem memproses kerusakan pada area tulisan "Test" dengan mengekstrak total 3.623 piksel bermasalah, yang kemudian diformulasikan ke dalam matriks berdimensi $3623 \times 3623$. Menggunakan pendekatan \textit{Gauss-Seidel}, persamaan Laplace ini sukses mencapai konvergensi hanya dalam 255 iterasi dengan nilai toleransi galat akhir $9.957 \times 10^{-4}$. Secara visual, tulisan merah "Test" berhasil dihapus sepenuhnya, dan tekstur pepohonan serta pantulan danau di latar belakang direkonstruksi dengan cukup baik melalui proses pemerataan intensitas warna piksel tetangga.
+
+\subsection{Performa pada Matriks Skala Maksimum}
+Untuk menguji ketahanan, program dihadapkan pada matriks dominan diagonal raksasa berukuran 1001x1002. Seluruh algoritma eliminasi Gauss, Gauss Jordan, dan Reduksi Baris mampu menyelesaikan komputasi dalam waktu di bawah 10 detik. Keterlambatan terburuk dialami oleh Kaidah Cramer yang memakan waktu komputasi ratusan detik karena algoritma naifnya memaksa penghitungan 1002 determinan raksasa secara berulang.
+
+
+\section{Penutup}
+
+\subsection{Kesimpulan}
+Pustaka aljabar linier yang dibangun berhasil mengeksekusi seluruh fungsi wajib secara mandiri tanpa menggunakan kakas matematika instan pihak ketiga. Seluruh model sistem persamaan linier, pencarian identitas determinan, dan pemodelan kurva data berhasil dieksekusi dengan presisi tinggi dan selaras dengan fondasi teori. Penambahan algoritma \textit{Image Inpainting} juga membuktikan bahwa pendekatan linier dapat digunakan untuk menangani pengolahan citra matriks dua dimensi secara efektif.
+
+\subsection{Kelebihan dan Kekurangan}
+\textbf{Kelebihan:} Pustaka inti komputasi telah terisolasi dengan rapi dari antarmuka pengguna, menjamin konsistensi luaran. Program dilengkapi perlindungan eksekusi (exception handling) yang mencegah kegagalan aplikasi akibat data masukan yang buruk. Fitur inpainting berjalan optimal dengan integrasi mask yang baik. \\
+\textbf{Kekurangan:} Kaidah Cramer dan komputasi kofaktor matriks masih sangat lamban saat memproses matriks berskala masif karena beban komputasi faktorial alamiahnya. Sistem pembulatan antarmuka juga berisiko menyembunyikan koefisien dengan bobot sangat kecil menjadi angka nol mutlak. Restorasi gambar berukuran sangat besar membutuhkan iterasi yang cukup panjang jika persentase kerusakannya menyebar luaskan bidang gambar.
+
+\subsection{Saran}
+Penanganan limitasi dapat dilakukan dengan mengganti metode pembulatan biasa menggunakan representasi notasi ilmiah standar. Komputasi iteratif berat pada matriks raksasa juga sangat disarankan untuk dieksekusi menggunakan paradigma multithreading di latar belakang agar antarmuka tidak terhenti (freeze).
+
+\subsection{Refleksi}
+\textbf{Rafel Dzinun Muhammad (13525063):}\\
+Pada Tugas Besar Aljabar Linier ini, dinamika kelompok menuntut saya untuk mengambil alih beberapa porsi tanggung jawab tambahan dari pembagian tugas awal. Fokus utama pekerjaan saya berada pada perancangan modul \textit{Input/Output (I/O) Handler} dan pembacaan berkas. Tantangan terbesar dalam membangun modul ini adalah memikirkan dan mengantisipasi seluruh kemungkinan \textit{edge case} atau anomali dari masukan pengguna agar program tetap berjalan stabil dan tidak mengalami \textit{crash}. Di sisi lain, pengalaman yang paling berkesan bagi saya adalah ketika mengerjakan fitur bonus antarmuka grafis (GUI). Menggunakan kakas \textit{Scene Builder} ternyata sangat intuitif dan menyenangkan, karena saya dapat merancang tata letak secara visual melalui pendekatan \textit{drag-and-drop}, untuk kemudian diintegrasikan langsung dengan \textit{logic controller} yang saya tulis di latar belakang. Secara keseluruhan, sisa waktu pengerjaan proyek ini menuntut dedikasi yang intens, di mana saya harus melalui banyak sesi \textit{coding} hingga larut malam demi memastikan seluruh fungsionalitas program dapat beroperasi dengan sempurna sebelum tenggat waktu.
+
+\textbf{Kevin Sie (13525053):}\\
+Pada Tugas Besar 1 Mata Kuliah Algeo ini, saya memegang tanggung jawab dalam menyelesaikan 3 bagian dasar dari tubes ini, yaitu Class Matrix, Determinan, dan Inverse / Balikan. Selain dari itu, saya juga memegang tanggung jawab terkait salah satu bonus, yaitu bonus Image Inpainting. Selama tubes ini, saya mempelajari dasar-dasar dari bahasa Java itu sendiri dan bagaimana ternyata bahasa ini cukup mirip dengan C/C++. Saya juga menjadi sedikit lebih terbiasa dalam menerapkan konsep OOP dan cara kerjanya. Selain itu, hal paling berkesan adalah ketika mengerjakan bagian bonus image inpainting, di mana saya mempelajari adanya tipe data untuk gambar, di mana tipe data ini memungkinkan kita untuk mengakses begitu banyak komponen dari suatu gambar. Tentunya selama pekerjaan tubes ini, saya sendiri merasa bahwa kami menghadapi beberapa kendala. Salah satunya adalah pembagian tugas dan komunikasi, dengan adanya tubes-tubes dan pekerjaan lain dari kami masing-masing. Upaya kami untuk mengatasi masalah ini adalah dengan bertemu dan mengkomunikasikan permasalahan-permasalahan yang kami hadapi sehingga dapat saling membantu. Harapannya, tubes ini memperkuat bonding kami bertiga dan juga membawakan hasil terbaik bagi kami.
+
+\textbf{Ahmad Boutros Fathir (13525002):}\\
+Dalam pengerjaan proyek Aljabar Linier kali ini, peran utama saya berfokus pada perancangan modul pemodelan data. Bagian tersebut mencakup algoritma Interpolasi Polinomial, Interpolasi Spline Kubik, serta Regresi Spline Kubik. Saya juga mengambil porsi penuh untuk menyusun, menganalisis komputasi, dan merapikan dokumen laporan akhir berbasis LaTeX. Proses penyelesaian tugas ini memberikan wawasan baru bagi saya mengenai ekosistem numerik pada bahasa Java. Saya menyadari betapa rentannya tipe data pecahan terhadap akumulasi galat komputasi saat memproses matriks berskala masif. Pengalaman ini melatih nalar saya untuk menerjemahkan teori matematika murni menjadi struktur kode yang fungsional. Momen yang paling menarik perhatian saya adalah saat merakit arsitektur regresi dan interpolasi. Sangat menakjubkan melihat bagaimana formula dasar seperti sistem tridiagonal secara matematis sanggup menciptakan persamaan kurva yang melintasi berbagai titik observasi secara presisi dan mulus. Tentu saja perjalanan kami tidak luput dari kendala, terutama terkait manajemen waktu dan sinkronisasi komunikasi. Padatnya jadwal perkuliahan menuntut kami untuk lebih cerdas mengatur prioritas. Kami menyiasatinya dengan meluangkan sesi pertemuan tatap muka untuk melakukan tinjauan kode secara langsung. Diskusi logika pemrograman yang kami terapkan sangat membantu untuk menutupi kelemahan satu sama lain. Saya berharap dedikasi yang kami curahkan pada proyek ini bisa mempererat relasi pertemanan kami sekaligus memberikan hasil akhir yang paling maksimal bagi kelompok.
+
+
+\begin{thebibliography}{9}
+
+\bibitem{anton} 
+H. Anton and C. Rorres, \textit{Elementary Linear Algebra: Applications Version}, 10th ed. Hoboken, NJ, USA: John Wiley \& Sons, 2010.
+
+\bibitem{burden}
+R. L. Burden and J. D. Faires, \textit{Numerical Analysis}, 9th ed. Boston, MA, USA: Brooks/Cole, Cengage Learning, 2011.
+
+\bibitem{hastie}
+T. Hastie, R. Tibshirani, and J. Friedman, \textit{The Elements of Statistical Learning: Data Mining, Inference, and Prediction}, 2nd ed. New York, NY, USA: Springer, 2009.
+
+\bibitem{bertalmio}
+M. Bertalmio, G. Sapiro, V. Caselles, dan C. Ballester, "Image inpainting," dalam \textit{Proc. 27th Annu. Conf. Computer Graphics and Interactive Techniques (SIGGRAPH '00)}, New York, NY, USA, 2000, hlm. 417--424.
+
+\bibitem{perez}
+P. Pérez, M. Gangnet, dan A. Blake, "Poisson image editing," \textit{ACM Trans. Graph.}, vol. 22, no. 3, hlm. 313--318, 2003.
+
+\bibitem{spesifikasi}
+Tim Dosen IF2123, \textit{Dokumen Spesifikasi Tugas Besar 1 IF2123 Aljabar Linier dan Geometri}. Bandung: STEI-K ITB, 2026.
+
+\end{thebibliography}
+
+\newpage
+
+\section*{Lampiran}
+
+\subsection*{A. Tautan Repositori GitHub}
+Repositori GitHub: \url{https://github.com/kevinsie23/algeo26-tb1-AlGorila.git}
+
+\subsection*{B. Pernyataan Integritas Akademik}
+Kami menyatakan bahwa tugas besar ini dikerjakan oleh anggota kelompok yang tercantum. Seluruh anggota telah memeriksa dan memahami kode, logika, serta isi laporan yang dihasilkan, dan bertanggung jawab penuh atas keseluruhan isinya tanpa pemanfaatan kecerdasan buatan generatif secara curang.
+
+\vspace{1.5cm}
+
+\begin{center}
+\begin{tabular}{ccc}
+
+\includegraphics[height=2cm]{rafel.jpeg} & \includegraphics[height=2cm]{kevin.png} & \includegraphics[height=2cm]{fathirr.jpeg} \\
+\vspace{0.2cm} 
+\rule{4.5cm}{1pt} & \rule{4.5cm}{1pt} & \rule{4.5cm}{1pt} \\
+Rafel Dzinun Muhammad & Kevin Sie & Ahmad Boutros Fathir \\
+13525063 & 13525053 & 13525002
+\end{tabular}
+\end{center}
+
+\end{document}

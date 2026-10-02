@@ -77,14 +77,14 @@ mvn --version
 
 Pastikan Anda berada di direktori *root* proyek (sejajar dengan `pom.xml`).
 
-**1. Kompilasi Proyek:**
+**1. Kompilasi dan Build Proyek:**
 ```bash
-mvn clean compile
+mvn clean package
 ```
 
 **2. Menjalankan Program CLI:**
 ```bash
-mvn exec:java
+java -jar bin/matrix-calculator-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
 **3. Menjalankan Program GUI (JavaFX):**
@@ -92,10 +92,6 @@ mvn exec:java
 mvn clean javafx:run
 ```
 
-**4. Membuat Berkas JAR:**
-```bash
-mvn clean package
-```
-*Berkas JAR akan tersedia di dalam direktori `target`.*
+*Berkas JAR akan tersedia di dalam direktori `bin`.*
 
 ---
