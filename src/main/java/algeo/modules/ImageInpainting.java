@@ -9,7 +9,7 @@ public class ImageInpainting {
     static final int MAX_ITER = 20000;
     static final double DIF = 1e-3;
     static final int MAX_DIMENSION = 512;
-    static final String IMAGE_DIR = "image/";
+    public static final String IMAGE_DIR = "image/";
  
     public static boolean imageInpainting(String pathOriginal, String pathMask, String pathOutput) {
         try{
@@ -35,7 +35,14 @@ public class ImageInpainting {
 
 
             boolean[][] isHole = getMaskHole(mask, width, height);
-            
+            int n = 0;
+            for(int j = 0; j < height; j++)
+                for(int i = 0; i < width; i++)
+                    if(isHole[j][i])
+                        n++;
+            System.out.println("Dimensi SPL         :" + n + " x " + n);
+
+
             Matrix R = new Matrix(height, width);
             Matrix G = new Matrix(height, width);
             Matrix B = new Matrix(height, width);

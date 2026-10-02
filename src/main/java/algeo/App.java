@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import algeo.modules.Determinan;
@@ -76,15 +78,15 @@ public class App {
     private static void menuImageInpainting(Scanner sc) {
         System.out.println("\n--- Image Inpainting ---");
     
-        String fileAsli = readNamaFile(sc, "Masukkan nama file gambar asli: ");
+        String fileAsli = readNamaFile(sc, "Masukkan nama file gambar asli: ", true);
         if (fileAsli == null)
             return;
 
-        String fileMask = readNamaFile(sc, "Masukkan nama file gambar mask: ");
+        String fileMask = readNamaFile(sc, "Masukkan nama file gambar mask: ", true);
         if (fileMask == null)
             return;
 
-        String fileOutput = readNamaFile(sc, "Masukkan nama file output: ");
+        String fileOutput = readNamaFile(sc, "Masukkan nama file output: ", false);
         if (fileOutput == null)
             return;
 
@@ -93,22 +95,39 @@ public class App {
         }
     }
 
-    private static String readNamaFile(Scanner sc, String prompt){
-        System.out.print(prompt);
-        String nama = sc.nextLine().trim();
+    private static String readNamaFile(Scanner sc, String prompt, boolean foundFile){
+        while(true){
+            System.out.print(prompt);
+            String nama = sc.nextLine().trim();
 
-        if (nama.isEmpty()) {
-            System.out.println("Nama file tidak boleh kosong!");
-            return null;
+            if(nama.isEmpty()){
+                System.out.println("Nama file tidak boleh kosong!");
+                continue;
+            }
+
+            int dot = nama.lastIndexOf('.');
+            if(dot <= 0 || dot == nama.length() - 1){
+                System.out.println("Nama file harus menyertakan format, contoh: gambar.png");
+                continue;
+            }
+
+            if(foundFile) {
+                File f = new File(ImageInpainting.IMAGE_DIR + nama);
+                if (!f.isFile()) {
+                    System.out.println("File tidak ditemukan: " + f.getPath());
+                    continue;
+                }
+            }
+            else{
+                String ext = nama.substring(dot + 1).toLowerCase();
+                if(!ext.equals("png") && !ext.equals("jpg") && !ext.equals("jpeg")) {
+                    System.out.println("Format output harus png, jpg, atau jpeg.");
+                    continue;
+                }
+            }
+
+            return nama;
         }
-
-        int dot = nama.lastIndexOf('.');
-        if (dot <= 0 || dot == nama.length() - 1) {
-            System.out.println("Nama file harus menyertakan format, contoh: gambar.png");
-            return null;
-        }
-
-        return nama;
     }
 
 
@@ -130,24 +149,22 @@ public class App {
             else if (metode == 2) res = SPL.gaussJordan(m);
             else if (metode == 3) res = SPL.inverseMethod(m);
             else if (metode == 4) res = SPL.cramer(m);
+        } catch (OutOfMemoryError e) {
+           System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung SPL: " + e.getMessage());
             return;
         }
         
         System.out.println("\n--- Hasil SPL ---");
-        if (res.langkah != null && !res.langkah.isEmpty()) {
-            System.out.println("Langkah-langkah:");
-            for (String step : res.langkah) {
-                System.out.println(step);
-            }
-        }
+        cetakLangkah(res.langkah);
         
         String hasilDisplay = res.toDisplayString(m.getCols() - 1);
         System.out.println("\nSolusi:");
         System.out.println(hasilDisplay);
         
-        tanyaSimpan(sc, res.namaMetode, m, hasilDisplay);
+        tanyaSimpan(sc, res.namaMetode, m, res.langkah, hasilDisplay);
     }
 
     private static void menuDeterminan(Scanner sc) {
@@ -156,7 +173,8 @@ public class App {
         System.out.println("2. Metode Ekspansi Kofaktor");
         int metode = IOHandler.readInt(sc, "Pilih metode (1-2): ", 1, 2);
         
-        Matrix m = bacaMatriks(sc, false, null);
+        String namaValidasi = (metode == 2) ? "Kofaktor" : null;
+        Matrix m = bacaMatriks(sc, false, namaValidasi);
         if (m == null) return;
         
         if (m.getRows() != m.getCols()) {
@@ -164,10 +182,14 @@ public class App {
             return;
         }
         
+        List<String> langkah = new ArrayList<>();
         double det = 0;
         try {
-            if (metode == 1) det = Determinan.rowReduction(m);
-            else det = Determinan.cofactorExpansion(m);
+            if (metode == 1) det = Determinan.rowReduction(m, langkah);
+            else det = Determinan.cofactorExpansion(m, langkah);
+        } catch (OutOfMemoryError e) {
+            System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung determinan: " + e.getMessage());
             return;
@@ -175,32 +197,10 @@ public class App {
         
         String namaMetode = metode == 1 ? "Determinan (Reduksi Baris)" : "Determinan (Ekspansi Kofaktor)";
         String hasilDisplay = "Determinan = " + IOHandler.formatNumber(det);
+        cetakLangkah(langkah);
         System.out.println("\n" + hasilDisplay);
         
-        tanyaSimpan(sc, namaMetode, m, hasilDisplay);
-    }
-
-    private static Matrix hitungInversSementara(Matrix m) {
-        try {
-            double det = Determinan.rowReduction(m);
-            if (Math.abs(det) < 1e-9) {
-                return null;
-            }
-        } catch (Exception e) {
-            return null;
-        }
-        
-        int n = m.getRows();
-        Matrix augmented = m.augment(Matrix.createIdentityMatrix(n));
-        Matrix rrefResult = SPL.rref(augmented, n, null);
-        
-        Matrix inv = new Matrix(n, n);
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                inv.setElmt(i, j, rrefResult.getElmt(i, j + n));
-            }
-        }
-        return inv;
+        tanyaSimpan(sc, namaMetode, m, langkah, hasilDisplay);
     }
 
     private static void menuInvers(Scanner sc) {
@@ -218,14 +218,20 @@ public class App {
             return;
         }
         
+        List<String> langkah = new ArrayList<>();
         Matrix inv = null;
         try {
-            if (metode == 1) inv = hitungInversSementara(m);
-            else inv = Invers.adjoinInverse(m);
+            if (metode == 1) inv = Invers.augmentInverse(m, langkah);
+            else inv = Invers.adjoinInverse(m, langkah);
+        } catch (OutOfMemoryError e) {
+            System.out.println("Memori tidak cukup untuk menyimpan langkah-langkah perhitungan matriks sebesar ini.");
+            return;
         } catch (Exception e) {
             System.out.println("Error saat menghitung invers: " + e.getMessage());
             return;
         }
+
+        cetakLangkah(langkah);
         
         if (inv == null) {
             System.out.println("matriks tidak memiliki balikan");
@@ -245,7 +251,7 @@ public class App {
         
         System.out.println("\nSolusi Invers:\n" + hasilDisplay);
         
-        tanyaSimpan(sc, namaMetode, m, hasilDisplay);
+        tanyaSimpan(sc, namaMetode, m, langkah, hasilDisplay);
     }
 
     private static Matrix bacaMatriks(Scanner sc, boolean augmented, String namaMetodeUntukValidasi) {
@@ -283,7 +289,7 @@ public class App {
         
         if (res != null && namaMetodeUntukValidasi != null) {
             String namaMetodeUpper = namaMetodeUntukValidasi.toUpperCase();
-            if (namaMetodeUpper.contains("CRAMER") || namaMetodeUpper.contains("ADJOIN")) {
+            if (namaMetodeUpper.contains("CRAMER") || namaMetodeUpper.contains("ADJOIN") || namaMetodeUpper.contains("KOFAKTOR")) {
                 int limitCols = namaMetodeUpper.contains("CRAMER") ? res.getCols() - 1 : res.getCols();
                 if (limitCols > 12) {
                     System.out.println("Metode ini menggunakan ekspansi kofaktor yang sangat lambat untuk matriks besar (>12x12). Silakan pilih metode lain atau gunakan matriks yang lebih kecil.");
@@ -294,7 +300,15 @@ public class App {
         return res;
     }
 
-    private static void tanyaSimpan(Scanner sc, String namaMetode, Matrix inputM, String hasil) {
+    private static void cetakLangkah(List<String> langkah) {
+        if(langkah == null || langkah.isEmpty())
+            return;
+        
+        System.out.println("\nLangkah-langkah:");
+        for(String s : langkah) System.out.println(s);
+    }
+
+    private static void tanyaSimpan(Scanner sc, String namaMetode, Matrix inputM, List<String> langkah, String hasil) {
         int simpan = IOHandler.readInt(sc, "Simpan ke file? (1. Ya, 2. Tidak): ", 1, 2);
         if (simpan == 1) {
             System.out.print("Masukkan nama file keluaran (misal output.txt): ");
@@ -309,6 +323,12 @@ public class App {
                     }
                     pw.println();
                 }
+
+                if(langkah != null && !langkah.isEmpty()) {
+                    pw.println("\nLangkah-langkah:");
+                    for (String s : langkah) pw.println(s);
+                }
+
                 pw.println("\nHasil:");
                 pw.println(hasil);
                 System.out.println("Berhasil disimpan ke " + path);
@@ -318,19 +338,49 @@ public class App {
         }
     }
 
-    private static void menuInterpolasi(Scanner sc) {
-        System.out.println("\n--- Interpolasi Polinomial ---");
-        int n = IOHandler.readInt(sc, "Masukkan jumlah titik (N): ", 1, 100);
-        
-        System.out.println("Masukkan titik-titik (x y):");
+    private static double[][] bacaTitik(Scanner sc, int minN, int maxN, boolean tolakDuplikat) {
+        System.out.println("Sumber input:");
+        System.out.println("1. Manual (Keyboard)");
+        System.out.println("2. File (.txt)");
+        int tipe = IOHandler.readInt(sc, "Pilih (1-2): ", 1, 2);
+
         Matrix m = null;
-        try {
-            m = IOHandler.readMatrixKeyboard(sc, n, 2);
-        } catch (Exception e) {
-            System.out.println("Gagal membaca titik: " + e.getMessage());
-            return;
+        if (tipe == 1) {
+            int n = IOHandler.readInt(sc, "Masukkan jumlah titik (N): ", minN, maxN);
+            System.out.println("Masukkan titik-titik (x y):");
+            try {
+                m = IOHandler.readMatrixKeyboard(sc, n, 2);
+            } catch (Exception e) {
+                System.out.println("Gagal membaca titik: " + e.getMessage());
+                return null;
+            }
+        } else {
+            System.out.print("Masukkan path/nama file: ");
+            String path = sc.nextLine().trim();
+            try {
+                m = IOHandler.readMatrixFile(path, maxN, 2);
+            } catch (FileNotFoundException e) {
+                System.out.println("Error: " + e.getMessage());
+                return null;
+            } catch (IllegalArgumentException | IOException e) {
+                System.out.println("Error format file: " + e.getMessage());
+                return null;
+            } catch (Exception e) {
+                System.out.println("Error: " + e.getMessage());
+                return null;
+            }
+            if (m.getCols() != 2) {
+                System.out.println("Error format file: setiap baris harus berisi tepat 2 angka (x y), ditemukan " + m.getCols() + " kolom.");
+                return null;
+            }
+            if (m.getRows() < minN) {
+                System.out.println("Error: jumlah titik minimal " + minN + ", ditemukan " + m.getRows() + ".");
+                return null;
+            }
+            System.out.println("Berhasil membaca " + m.getRows() + " titik dari file.");
         }
-        
+
+        int n = m.getRows();
         double[][] points = new double[n][2];
         for (int i = 0; i < n; i++) {
             points[i][0] = m.getElmt(i, 0);
@@ -339,47 +389,81 @@ public class App {
 
         for (int i = 0; i < n - 1; i++) {
             for (int j = 0; j < n - i - 1; j++) {
-                if (points[j][0] > points[j+1][0]) {
+                if (points[j][0] > points[j + 1][0]) {
                     double[] temp = points[j];
-                    points[j] = points[j+1];
-                    points[j+1] = temp;
+                    points[j] = points[j + 1];
+                    points[j + 1] = temp;
                 }
             }
         }
 
-        for (int i = 0; i < n - 1; i++) {
-            if (Math.abs(points[i+1][0] - points[i][0]) < 1e-9) {
-                System.out.println("Terdapat titik x yang duplikat, tidak bisa dilanjutkan.");
-                return;
+        if (tolakDuplikat) {
+            for (int i = 0; i < n - 1; i++) {
+                if (Math.abs(points[i + 1][0] - points[i][0]) < 1e-9) {
+                    System.out.println("Terdapat titik x yang duplikat, tidak bisa dilanjutkan.");
+                    return null;
+                }
             }
         }
-        
-        System.out.print("Masukkan nilai x yang ditaksir: ");
-        double xTarget = 0;
+        return points;
+    }
+
+    private static Double bacaAngka(Scanner sc, String prompt) {
+        System.out.print(prompt);
         try {
-            xTarget = IOHandler.parseNumber(sc.nextLine());
+            return IOHandler.parseNumber(sc.nextLine());
         } catch (Exception e) {
             System.out.println("Input tidak valid: " + e.getMessage());
-            return;
+            return null;
         }
-        
+    }
+
+    private static Matrix titikKeMatrix(double[][] points) {
+        Matrix m = new Matrix(points.length, 2);
+        for (int i = 0; i < points.length; i++) {
+            m.setElmt(i, 0, points[i][0]);
+            m.setElmt(i, 1, points[i][1]);
+        }
+        return m;
+    }
+
+    private static double[] koefisienSegmen(double[][] points, double[] M, int i) {
+        double xi = points[i][0];
+        double hi = points[i + 1][0] - xi;
+        double yi = points[i][1];
+        double yNext = points[i + 1][1];
+        double a = yi;
+        double b = (yNext - yi) / hi - (2 * M[i] + M[i + 1]) * hi / 6.0;
+        double c = M[i] / 2.0;
+        double d = (M[i + 1] - M[i]) / (6.0 * hi);
+        return new double[] { a, b, c, d };
+    }
+
+    private static void menuInterpolasi(Scanner sc) {
+        System.out.println("\n--- Interpolasi Polinomial ---");
+        double[][] points = bacaTitik(sc, 1, 10, true);
+        if (points == null) return;
+
+        Double xTarget = bacaAngka(sc, "Masukkan nilai x yang ditaksir: ");
+        if (xTarget == null) return;
+
         try {
             Matrix aug = InterpolasiPolinomial.createAugmentedMatrix(points);
             SPLResult res = SPL.gaussJordan(aug);
-            
+
             if (res.jenis != SPLResult.Jenis.UNIQUE) {
                 System.out.println("Titik-titik tidak menghasilkan solusi unik (matriks singular).");
                 return;
             }
-            
+
             double[] koef = res.konstanta;
             String eq = InterpolasiPolinomial.getEquationString(koef);
             double val = InterpolasiPolinomial.evaluate(koef, xTarget);
-            
-            System.out.println("\nPersamaan Interpolasi:");
-            System.out.println(eq);
-            System.out.println("Nilai p(" + IOHandler.formatNumber(xTarget) + ") = " + IOHandler.formatNumber(val));
-            
+
+            String hasilDisplay = "Persamaan Interpolasi:\n" + eq + "\nNilai p(" + IOHandler.formatNumber(xTarget) + ") = " + IOHandler.formatNumber(val);
+            System.out.println("\n" + hasilDisplay);
+
+            tanyaSimpan(sc, "Interpolasi Polinomial", titikKeMatrix(points), null, hasilDisplay);
         } catch (Exception e) {
             System.out.println("Terjadi kesalahan: " + e.getMessage());
         }
@@ -387,125 +471,61 @@ public class App {
 
     private static void menuSpline(Scanner sc) {
         System.out.println("\n--- Natural Cubic Spline Interpolation ---");
-        int n = IOHandler.readInt(sc, "Masukkan jumlah titik (N): ", 2, 100);
-        
-        System.out.println("Masukkan titik-titik (x y):");
-        Matrix m = null;
-        try {
-            m = IOHandler.readMatrixKeyboard(sc, n, 2);
-        } catch (Exception e) {
-            System.out.println("Gagal membaca titik: " + e.getMessage());
-            return;
-        }
-        
-        double[][] points = new double[n][2];
-        for (int i = 0; i < n; i++) {
-            points[i][0] = m.getElmt(i, 0);
-            points[i][1] = m.getElmt(i, 1);
-        }
+        double[][] points = bacaTitik(sc, 2, 10, true);
+        if (points == null) return;
+        int n = points.length;
 
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = 0; j < n - i - 1; j++) {
-                if (points[j][0] > points[j+1][0]) {
-                    double[] temp = points[j];
-                    points[j] = points[j+1];
-                    points[j+1] = temp;
-                }
-            }
-        }
+        Double xTarget = bacaAngka(sc, "Masukkan nilai x yang ditaksir: ");
+        if (xTarget == null) return;
 
-        for (int i = 0; i < n - 1; i++) {
-            if (Math.abs(points[i+1][0] - points[i][0]) < 1e-9) {
-                System.out.println("Terdapat titik x yang duplikat, tidak bisa dilanjutkan.");
-                return;
-            }
-        }
-        
-        System.out.print("Masukkan nilai x yang ditaksir: ");
-        double xTarget = 0;
-        try {
-            xTarget = IOHandler.parseNumber(sc.nextLine());
-        } catch (Exception e) {
-            System.out.println("Input tidak valid: " + e.getMessage());
-            return;
-        }
-        
         try {
             Matrix aug = SplineKubik.createTridiagonalMatrix(points);
             SPLResult res = SPL.gaussJordan(aug);
-            
+
             if (res.jenis != SPLResult.Jenis.UNIQUE) {
                 System.out.println("Gagal membentuk spline (matriks singular).");
                 return;
             }
-            
+
             double[] M = res.konstanta;
-            
-            System.out.println("\nPersamaan Spline tiap segmen:");
+            StringBuilder sb = new StringBuilder("Persamaan Spline tiap segmen:\n");
             for (int i = 0; i < n - 1; i++) {
                 double xi = points[i][0];
-                double xNext = points[i+1][0];
-                double yi = points[i][1];
-                double yNext = points[i+1][1];
-                
-                double hi = xNext - xi;
-                
-                double a = yi;
-                double b = (yNext - yi) / hi - (2 * M[i] + M[i+1]) * hi / 6.0;
-                double c = M[i] / 2.0;
-                double d = (M[i+1] - M[i]) / (6.0 * hi);
-                
+                double xNext = points[i + 1][0];
+                double[] k = koefisienSegmen(points, M, i);
+
                 String eq = String.format("S%d(x) = %s + %s(x - %s) + %s(x - %s)^2 + %s(x - %s)^3",
-                    i+1,
-                    IOHandler.formatNumber(a),
-                    IOHandler.formatNumber(b),
-                    IOHandler.formatNumber(xi),
-                    IOHandler.formatNumber(c),
-                    IOHandler.formatNumber(xi),
-                    IOHandler.formatNumber(d),
-                    IOHandler.formatNumber(xi)
-                );
-                
-                System.out.println(String.format("Segmen %d [%s, %s]:", i+1, IOHandler.formatNumber(xi), IOHandler.formatNumber(xNext)));
-                System.out.println(eq.replace("+ -", "- "));
+                        i + 1,
+                        IOHandler.formatNumber(k[0]),
+                        IOHandler.formatNumber(k[1]), IOHandler.formatNumber(xi),
+                        IOHandler.formatNumber(k[2]), IOHandler.formatNumber(xi),
+                        IOHandler.formatNumber(k[3]), IOHandler.formatNumber(xi));
+
+                sb.append(String.format("Segmen %d [%s, %s]:\n", i + 1,
+                        IOHandler.formatNumber(xi), IOHandler.formatNumber(xNext)));
+                sb.append(eq.replace("+ -", "- ")).append("\n");
             }
-            
-            double val = 0;
-            boolean found = false;
+
+            int seg = -1;
             for (int i = 0; i < n - 1; i++) {
-                if (xTarget >= points[i][0] && xTarget <= points[i+1][0]) {
-                    double xi = points[i][0];
-                    double hi = points[i+1][0] - xi;
-                    double yi = points[i][1];
-                    double yNext = points[i+1][1];
-                    double a = yi;
-                    double b = (yNext - yi) / hi - (2 * M[i] + M[i+1]) * hi / 6.0;
-                    double c = M[i] / 2.0;
-                    double d = (M[i+1] - M[i]) / (6.0 * hi);
-                    
-                    double diff = xTarget - xi;
-                    val = a + b * diff + c * Math.pow(diff, 2) + d * Math.pow(diff, 3);
-                    found = true;
+                if (xTarget >= points[i][0] && xTarget <= points[i + 1][0]) {
+                    seg = i;
                     break;
                 }
             }
-            if (!found) {
-                int i = (xTarget < points[0][0]) ? 0 : n - 2;
-                double xi = points[i][0];
-                double hi = points[i+1][0] - xi;
-                double yi = points[i][1];
-                double yNext = points[i+1][1];
-                double a = yi;
-                double b = (yNext - yi) / hi - (2 * M[i] + M[i+1]) * hi / 6.0;
-                double c = M[i] / 2.0;
-                double d = (M[i+1] - M[i]) / (6.0 * hi);
-                
-                double diff = xTarget - xi;
-                val = a + b * diff + c * Math.pow(diff, 2) + d * Math.pow(diff, 3);
-            }
-            
-            System.out.println("\nNilai S(" + IOHandler.formatNumber(xTarget) + ") = " + IOHandler.formatNumber(val));
-            
+            if (seg == -1) seg = (xTarget < points[0][0]) ? 0 : n - 2;
+
+            double[] k = koefisienSegmen(points, M, seg);
+            double diff = xTarget - points[seg][0];
+            double val = k[0] + k[1] * diff + k[2] * diff * diff + k[3] * diff * diff * diff;
+
+            sb.append("\nNilai S(").append(IOHandler.formatNumber(xTarget)).append(") = ")
+              .append(IOHandler.formatNumber(val));
+
+            String hasilDisplay = sb.toString();
+            System.out.println("\n" + hasilDisplay);
+
+            tanyaSimpan(sc, "Natural Cubic Spline Interpolation", titikKeMatrix(points), null, hasilDisplay);
         } catch (Exception e) {
             System.out.println("Terjadi kesalahan: " + e.getMessage());
         }
@@ -513,72 +533,49 @@ public class App {
 
     private static void menuRegresiSpline(Scanner sc) {
         System.out.println("\n--- Regresi Spline Kubik ---");
-        int n = IOHandler.readInt(sc, "Masukkan jumlah titik (N): ", 1, 100);
-        
-        System.out.println("Masukkan titik-titik (x y):");
-        Matrix m = null;
-        try {
-            m = IOHandler.readMatrixKeyboard(sc, n, 2);
-        } catch (Exception e) {
-            System.out.println("Gagal membaca titik: " + e.getMessage());
-            return;
-        }
-        
-        double[][] points = new double[n][2];
-        for (int i = 0; i < n; i++) {
-            points[i][0] = m.getElmt(i, 0);
-            points[i][1] = m.getElmt(i, 1);
-        }
+        double[][] points = bacaTitik(sc, 1, 10, false);
+        if (points == null) return;
 
-        for (int i = 0; i < n - 1; i++) {
-            for (int j = 0; j < n - i - 1; j++) {
-                if (points[j][0] > points[j+1][0]) {
-                    double[] temp = points[j];
-                    points[j] = points[j+1];
-                    points[j+1] = temp;
-                }
-            }
-        }
-        
         int k = IOHandler.readInt(sc, "Masukkan jumlah knot (k): ", 1, 100);
         double[] knots = new double[k];
         for (int i = 0; i < k; i++) {
-            System.out.print("Masukkan knot ke-" + (i+1) + ": ");
-            try {
-                knots[i] = IOHandler.parseNumber(sc.nextLine());
-            } catch (Exception e) {
-                System.out.println("Input tidak valid: " + e.getMessage());
-                return;
-            }
+            Double knot = bacaAngka(sc, "Masukkan knot ke-" + (i + 1) + ": ");
+            if (knot == null) return;
+            knots[i] = knot;
         }
-        
-        System.out.print("Masukkan nilai x yang ditaksir: ");
-        double xTarget = 0;
-        try {
-            xTarget = IOHandler.parseNumber(sc.nextLine());
-        } catch (Exception e) {
-            System.out.println("Input tidak valid: " + e.getMessage());
-            return;
-        }
-        
+
+        Double xTarget = bacaAngka(sc, "Masukkan nilai x yang ditaksir: ");
+        if (xTarget == null) return;
+
         try {
             Matrix X = RegresiSpline.createDesignMatrix(points, knots);
             Matrix Y = RegresiSpline.createYMatrix(points);
             Matrix beta = RegresiSpline.calculateBeta(X, Y);
-            
+
             if (beta == null) {
                 System.out.println("Matriks singular, regresi gagal.");
                 return;
             }
-            
-            System.out.println("\nKoefisien Model (Beta):");
-            for (int i = 0; i < beta.getRows(); i++) {
-                System.out.println("b" + i + " = " + IOHandler.formatNumber(beta.getElmt(i, 0)));
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Knot: ");
+            for (int i = 0; i < k; i++) {
+                sb.append(IOHandler.formatNumber(knots[i]));
+                if (i < k - 1) sb.append(", ");
             }
-            
+            sb.append("\n\nKoefisien Model (Beta):\n");
+            for (int i = 0; i < beta.getRows(); i++) {
+                sb.append("b").append(i).append(" = ").append(IOHandler.formatNumber(beta.getElmt(i, 0))).append("\n");
+            }
+
             double val = RegresiSpline.evaluate(beta, knots, xTarget);
-            System.out.println("\nNilai taksiran y untuk x = " + IOHandler.formatNumber(xTarget) + " adalah " + IOHandler.formatNumber(val));
-            
+            sb.append("\nNilai taksiran y untuk x = ").append(IOHandler.formatNumber(xTarget))
+              .append(" adalah ").append(IOHandler.formatNumber(val));
+
+            String hasilDisplay = sb.toString();
+            System.out.println("\n" + hasilDisplay);
+
+            tanyaSimpan(sc, "Regresi Spline Kubik", titikKeMatrix(points), null, hasilDisplay);
         } catch (Exception e) {
             System.out.println("Terjadi kesalahan: " + e.getMessage());
         }

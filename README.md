@@ -45,13 +45,28 @@ mvn --version
 .
 ├── bin
 ├── docs
+├── image
 ├── src
 │   └── main
-│       ├── java
-│       │   └── algeo 
-│       └── resources
-├── test  
-├── pom.xml    
+│       ├── resources  
+│       └── java
+│           └── algeo
+│               ├── modules
+│               │   ├── Determinan.java
+│               │   ├── ImageInpainting.java
+│               │   ├── InterpolasiPolinomial.java
+│               │   ├── Invers.java
+│               │   ├── IOHandler.java
+│               │   ├── Matrix.java
+│               │   ├── RegresiSpline.java
+│               │   ├── SPL.java
+│               │   ├── SplineKubik.java
+│               │   └── SPLResult.java
+│               ├── App.java
+│               ├── AppGUI.java
+│               └── GorillaController.java
+├── test
+├── pom.xml
 └── README.md
 ```
 

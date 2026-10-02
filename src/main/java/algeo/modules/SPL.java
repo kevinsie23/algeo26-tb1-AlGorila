@@ -80,11 +80,6 @@ public class SPL {
         int cols = temp.getCols();
         int varCount = cols - 1;
         
-        boolean recordSteps = rows <= 12;
-        if(!recordSteps){
-            res.langkah.add("Matriks besar, langkah detail tidak ditampilkan.");
-        }
-        
         int r = 0;
         int[] pivotCols = new int[rows];
         for(int i=0; i<rows; i++){
@@ -108,19 +103,15 @@ public class SPL {
             
             if(pivotRow != r){
                 temp.swapRows(r, pivotRow);
-                if(recordSteps){
-                    res.langkah.add("R" + (r+1) + " <-> R" + (pivotRow+1));
-                    res.langkah.add(matriksKeString(temp));
-                }
+                res.langkah.add("R" + (r+1) + " <-> R" + (pivotRow+1));
+                res.langkah.add(matriksKeString(temp));
             }
             
             double pivotVal = temp.getElmt(r, c);
             if(Math.abs(pivotVal - 1.0) > 1e-9){
                 temp.multiplyRow(r, 1.0 / pivotVal);
-                if(recordSteps){
-                    res.langkah.add("R" + (r+1) + " <- R" + (r+1) + " / " + IOHandler.formatNumber(pivotVal));
-                    res.langkah.add(matriksKeString(temp));
-                }
+                res.langkah.add("R" + (r+1) + " <- R" + (r+1) + " / " + IOHandler.formatNumber(pivotVal));
+                res.langkah.add(matriksKeString(temp));
             }
             pivotCols[r] = c;
             
@@ -128,11 +119,9 @@ public class SPL {
                 double factor = temp.getElmt(i, c);
                 if(Math.abs(factor) > 1e-9){
                     temp.addMulRow(i, r, -factor);
-                    if(recordSteps){
-                        String sign = factor > 0 ? " - " : " + ";
-                        res.langkah.add("R" + (i+1) + " <- R" + (i+1) + sign + IOHandler.formatNumber(Math.abs(factor)) + "*R" + (r+1));
-                        res.langkah.add(matriksKeString(temp));
-                    }
+                    String sign = factor > 0 ? " - " : " + ";
+                    res.langkah.add("R" + (i+1) + " <- R" + (i+1) + sign + IOHandler.formatNumber(Math.abs(factor)) + "*R" + (r+1));
+                    res.langkah.add(matriksKeString(temp));
                 }
             }
             r++;
@@ -243,12 +232,7 @@ public class SPL {
         int cols = aug.getCols();
         int varCount = cols - 1;
         
-        boolean recordSteps = rows <= 12;
-        if(!recordSteps){
-            res.langkah.add("Matriks besar, langkah detail tidak ditampilkan.");
-        }
-        
-        Matrix temp = rref(aug, varCount, recordSteps ? res.langkah : null);
+        Matrix temp = rref(aug, varCount, res.langkah);
         
         for(int i=0; i<rows; i++){
             boolean allZero = true;
@@ -359,6 +343,10 @@ public class SPL {
         }
         
         double detA = Determinan.cofactorExpansion(A);
+        res.langkah.add("Matriks koefisien A:");
+        res.langkah.add(matriksKeString(A));
+        res.langkah.add("det(A) = " + IOHandler.formatNumber(detA));
+
         if(Math.abs(detA) < 1e-9){
             res.jenis = Jenis.NONE;
             res.langkah.add("Determinan A = 0, Kaidah Cramer tidak dapat digunakan.");
@@ -373,12 +361,17 @@ public class SPL {
             for(int i=0; i<rows; i++){
                 Aj.setElmt(i, j, aug.getElmt(i, cols-1));
             }
+
             double detAj = Determinan.cofactorExpansion(Aj);
-            res.langkah.add("det(A" + (j+1) + ") = " + IOHandler.formatNumber(detAj));
-            
             double xj = detAj / detA;
-            if(Math.abs(xj) < 1e-9) xj = 0.0;
+            if(Math.abs(xj) < 1e-9)
+                    xj = 0.0;
             res.konstanta[j] = xj;
+
+            res.langkah.add("\nA" + (j+1) + " (kolom " + (j+1) + " diganti konstanta):");
+            res.langkah.add(matriksKeString(Aj));
+            res.langkah.add("det(A" + (j+1) + ") = " + IOHandler.formatNumber(detAj));
+            res.langkah.add("x" + (j+1) + " = det(A" + (j+1) + ") / det(A) = " + IOHandler.formatNumber(detAj) + " / " + IOHandler.formatNumber(detA) + " = " + IOHandler.formatNumber(xj));
         }
         
         return res;
@@ -408,14 +401,16 @@ public class SPL {
         double detA = Determinan.rowReduction(A);
         if(Math.abs(detA) < 1e-9){
             res.jenis = Jenis.NONE;
-            res.langkah.add("Matriks tidak memiliki balikan.");
+            res.langkah.add("det(A) = 0, matriks tidak memiliki balikan.");
             return res;
         }
-        
+
         Matrix id = Matrix.createIdentityMatrix(rows);
         Matrix A_id = A.augment(id);
+        res.langkah.add("Matriks augmentasi [A | I]:");
+        res.langkah.add(matriksKeString(A_id));
         
-        Matrix rref_A_id = rref(A_id, varCount, null);
+        Matrix rref_A_id = rref(A_id, varCount, res.langkah);
         
         Matrix invA = new Matrix(rows, rows);
         for(int i=0; i<rows; i++){
@@ -424,14 +419,20 @@ public class SPL {
             }
         }
         
-        res.langkah.add("Berhasil menghitung A^-1 dengan RREF.");
+        res.langkah.add("\nBentuk akhir [I | A^-1], sehingga A^-1 =");
+        res.langkah.add(matriksKeString(invA));
         
         Matrix B = new Matrix(rows, 1);
         for(int i=0; i<rows; i++){
             B.setElmt(i, 0, aug.getElmt(i, cols-1));
         }
         
+        res.langkah.add("\nMatriks konstanta B:");
+        res.langkah.add(matriksKeString(B));
+
         Matrix X = invA.multiply(B);
+        res.langkah.add("\nX = A^-1 * B =");
+        res.langkah.add(matriksKeString(X));
         
         res.jenis = Jenis.UNIQUE;
         res.konstanta = new double[varCount];
@@ -444,7 +445,7 @@ public class SPL {
         return res;
     }
 
-    private static String matriksKeString(Matrix m) {
+    public static String matriksKeString(Matrix m) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < m.getRows(); i++) {
             for (int j = 0; j < m.getCols(); j++) {
