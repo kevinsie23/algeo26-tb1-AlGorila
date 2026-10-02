@@ -9,7 +9,7 @@ public class ImageInpainting {
     static final int MAX_ITER = 20000;
     static final double DIF = 1e-3;
     static final int MAX_DIMENSION = 512;
-    static final String IMAGE_DIR = "image/";
+    public static final String IMAGE_DIR = "image/";
  
     public static boolean imageInpainting(String pathOriginal, String pathMask, String pathOutput) {
         try{

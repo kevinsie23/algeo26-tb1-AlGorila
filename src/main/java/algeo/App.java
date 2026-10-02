@@ -76,15 +76,15 @@ public class App {
     private static void menuImageInpainting(Scanner sc) {
         System.out.println("\n--- Image Inpainting ---");
     
-        String fileAsli = readNamaFile(sc, "Masukkan nama file gambar asli: ");
+        String fileAsli = readNamaFile(sc, "Masukkan nama file gambar asli: ", true);
         if (fileAsli == null)
             return;
 
-        String fileMask = readNamaFile(sc, "Masukkan nama file gambar mask: ");
+        String fileMask = readNamaFile(sc, "Masukkan nama file gambar mask: ", true);
         if (fileMask == null)
             return;
 
-        String fileOutput = readNamaFile(sc, "Masukkan nama file output: ");
+        String fileOutput = readNamaFile(sc, "Masukkan nama file output: ", false);
         if (fileOutput == null)
             return;
 
@@ -93,22 +93,39 @@ public class App {
         }
     }
 
-    private static String readNamaFile(Scanner sc, String prompt){
-        System.out.print(prompt);
-        String nama = sc.nextLine().trim();
+    private static String readNamaFile(Scanner sc, String prompt, boolean foundFile){
+        while(true){
+            System.out.print(prompt);
+            String nama = sc.nextLine().trim();
 
-        if (nama.isEmpty()) {
-            System.out.println("Nama file tidak boleh kosong!");
-            return null;
+            if(nama.isEmpty()){
+                System.out.println("Nama file tidak boleh kosong!");
+                continue;
+            }
+
+            int dot = nama.lastIndexOf('.');
+            if(dot <= 0 || dot == nama.length() - 1){
+                System.out.println("Nama file harus menyertakan format, contoh: gambar.png");
+                continue;
+            }
+
+            if(foundFile) {
+                File f = new File(ImageInpainting.IMAGE_DIR + nama);
+                if (!f.isFile()) {
+                    System.out.println("File tidak ditemukan: " + f.getPath());
+                    continue;
+                }
+            }
+            else{
+                String ext = nama.substring(dot + 1).toLowerCase();
+                if(!ext.equals("png") && !ext.equals("jpg") && !ext.equals("jpeg")) {
+                    System.out.println("Format output harus png, jpg, atau jpeg.");
+                    continue;
+                }
+            }
+
+            return nama;
         }
-
-        int dot = nama.lastIndexOf('.');
-        if (dot <= 0 || dot == nama.length() - 1) {
-            System.out.println("Nama file harus menyertakan format, contoh: gambar.png");
-            return null;
-        }
-
-        return nama;
     }
 
 
