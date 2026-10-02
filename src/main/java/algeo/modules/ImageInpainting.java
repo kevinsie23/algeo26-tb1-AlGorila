@@ -13,9 +13,15 @@ public class ImageInpainting {
  
     public static boolean imageInpainting(String pathOriginal, String pathMask, String pathOutput) {
         try{
-            pathOriginal = IMAGE_DIR + pathOriginal;
-            pathMask = IMAGE_DIR + pathMask;
-            pathOutput = IMAGE_DIR + pathOutput;
+            if (!new File(pathOriginal).isAbsolute()) {
+                pathOriginal = IMAGE_DIR + pathOriginal;
+            }
+            if (!new File(pathMask).isAbsolute()) {
+                pathMask = IMAGE_DIR + pathMask;
+            }
+            if (!new File(pathOutput).isAbsolute()) {
+                pathOutput = IMAGE_DIR + pathOutput;
+            }
     
             BufferedImage original = ImageIO.read(new File(pathOriginal));
             BufferedImage mask = ImageIO.read(new File(pathMask));
