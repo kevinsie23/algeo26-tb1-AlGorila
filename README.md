@@ -1,8 +1,6 @@
 # Aljabar Linier dan Geometri Tubes 1 Template
-
-Template awal Tugas Besar 1 IF2123 Aljabar Linier dan Geometri Semester I 2026/2027. Proyek menggunakan Java, Maven, dan JavaFX.
-
-Ruang lingkup tugas meliputi sistem persamaan linier, determinan, matriks balikan, interpolasi polinomial, interpolasi splina kubik natural, dan regresi splina kubik. Ketentuan lengkap mengikuti dokumen spesifikasi tugas besar.
+## Deskripsi Program
+(JANGAN LUPA ISI DESKRIPSI PROGRAM, CEK PALING BAWAH JUGA)
 
 ## Requirements
 
@@ -22,10 +20,23 @@ mvn --version
 .
 ├── bin
 ├── docs
+├── image
 ├── src
 │   └── main
 │       └── java
 │           └── algeo
+│               ├── modules
+│               │   ├── Determinan.java
+│               │   ├── ImageInpainting.java
+│               │   ├── InterpolasiPolinomial.java
+│               │   ├── Invers.java
+│               │   ├── IOHandler.java
+│               │   ├── Matrix.java
+│               │   ├── RegresiSpline.java
+│               │   ├── SPL.java
+│               │   ├── SplineKubik.java
+│               │   └── SPLResult.java
+│               └── App.java
 ├── test
 ├── pom.xml
 └── README.md
@@ -66,4 +77,6 @@ Untuk menggunakan JavaFX, sesuaikan kelas `App.java`, kemudian jalankan:
 mvn clean javafx:run
 ```
 
-Lengkapi kembali README kelompok dengan deskripsi program, alur penggunaan, dan cara menjalankan program sebelum pengumpulan.
+## Alur Penggunaan
+(JANGAN LUPAA ALUR PENGGUNAAN)
+(SAMA ATUR" MENAJLANKAN PROGRAM, KALO DI ATAS ADA YG BEDA OR KURANG LENGKAP GANTI AJA, SOALNYA TEMPLATE DARI ASISTEN)
