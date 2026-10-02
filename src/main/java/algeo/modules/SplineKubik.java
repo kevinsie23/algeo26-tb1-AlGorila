@@ -3,7 +3,7 @@ package algeo.modules;
 public class SplineKubik {
 
     public static Matrix createTridiagonalMatrix(double[][] points) {
-        int n = points.length; // Jumlah total titik data
+        int n = points.length;
         Matrix aug = new Matrix(n, n + 1);
 
         aug.setElmt(0, 0, 1.0);
